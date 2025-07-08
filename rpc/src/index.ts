@@ -64,9 +64,6 @@ class RPCFactory<T extends RPCEnvironment> extends Wrapper {
 }
 
 export { RPCFactory }
-// export const rpcClient = new RPCFactory({ env: "client" }).get();
-// export const rpcServer = new RPCFactory({ env: "server" }).get();
-// export const rpcWebview = new RPCFactory({ env: "webview" }).get();
 export * from './utils/types'
 export * from './utils/native'
 export type * from './core/server'

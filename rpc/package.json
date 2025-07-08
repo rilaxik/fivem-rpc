@@ -1,6 +1,6 @@
 {
 	"name": "@entityseven/fivem-rpc",
-	"description": "FiveM RPC is an abstraction for handling events in GTA V FiveM servers in JS/TS",
+	"description": "FiveM RPC is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS",
 	"version": "0.1.0",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
