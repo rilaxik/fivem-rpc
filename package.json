@@ -1,0 +1,37 @@
+{
+	"workspaces": [
+		"rpc",
+		"shared-types"
+	],
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.1",
+		"@types/bun": "^1.2.18"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"check": "bunx biome check",
+		"format": "bunx biome format --write"
+	},
+	"private": true,
+	"type": "module",
+	"license": "CC0-1.0",
+	"author": "Entity Seven Group",
+	"contributors": [
+		{
+			"name": "Danya H",
+			"email": "dev.rilaxik@gmail.com",
+			"url": "https://github.com/rilaxik/"
+		},
+		{
+			"name": "Oleksandr Honcharov",
+			"email": "0976053529@ukr.net",
+			"url": "https://github.com/SashaGoncharov19/"
+		}
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/rilaxik/fivem-rpc.git"
+	}
+}
