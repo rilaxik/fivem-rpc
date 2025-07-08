@@ -1,5 +1,3 @@
-/// <reference types="@citizenfx/client" />
-
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 import { Emitter } from '../utils/emitter'
 import { generateUUID, parse, stringify, stringifyWeb } from '../utils/funcs'
@@ -18,6 +16,20 @@ import {
 	type RPCStateWeb,
 } from '../utils/types'
 import { Wrapper } from './wrapper'
+
+declare function onNet(eventName: string, callback: Function): void
+declare function emitNet(eventName: string, ...args: unknown[]): void
+declare function on(eventName: string, callback: Function): void
+declare function RegisterNuiCallbackType(callbackType: string): void
+declare function GetPlayerServerId(player: number): number
+declare function PlayerId(): number
+declare function SetNuiFocus(hasFocus: boolean, hasCursor: boolean): void
+declare function RegisterCommand(
+	commandName: string,
+	handler: Function,
+	restricted: boolean,
+): void
+declare function SendNuiMessage(jsonString: string): boolean
 
 export class RPCInstanceClient extends Wrapper {
 	private readonly _emitterServer: Emitter

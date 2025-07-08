@@ -1,5 +1,3 @@
-/// <reference types="@citizenfx/server" />
-
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 import { Emitter } from '../utils/emitter'
 import { generateUUID, parse, stringify } from '../utils/funcs'
@@ -13,6 +11,15 @@ import {
 	type RPCStateRaw,
 } from '../utils/types'
 import { Wrapper } from './wrapper'
+
+declare function onNet(eventName: string, callback: Function): void
+declare function emitNet(eventName: string, ...args: unknown[]): void
+declare function on(eventName: string, callback: Function): void
+declare function RegisterCommand(
+	commandName: string,
+	handler: Function,
+	restricted: boolean,
+): void
 
 export class RPCInstanceServer extends Wrapper {
 	private readonly _emitterClient: Emitter
