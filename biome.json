@@ -6,7 +6,8 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!dist/*"]
 	},
 	"formatter": {
 		"enabled": true
@@ -14,7 +15,13 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"complexity": {
+				"noBannedTypes": "info"
+			},
+			"suspicious": {
+				"noExplicitAny": "info"
+			}
 		}
 	},
 	"javascript": {

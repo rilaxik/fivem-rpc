@@ -1,11 +1,11 @@
 {
 	"name": "@entityseven/fivem-rpc",
-	"description": "FiveM RPC is an abstraction for events in GTA V FiveM servers in JS/TS",
+	"description": "FiveM RPC is an abstraction for handling events in GTA V FiveM servers in JS/TS",
 	"version": "0.1.0",
-	"main": "",
-	"types": "",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"files": [
-		"types/**/*",
+		"dist/**/*",
 		"readme.md",
 		"license.md"
 	],
@@ -15,7 +15,6 @@
 		"fivem",
 		"gta"
 	],
-	"type": "module",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
@@ -25,6 +24,13 @@
 		}
 	],
 	"license": "Custom-Attribution-NoDerivs",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/rilaxik/fivem-rpc.git"
+	},
+	"scripts": {
+		"build": "tsup"
+	},
 	"devDependencies": {
 		"@microsoft/api-extractor": "^7.47.9",
 		"@citizenfx/client": "^2.0.15015-1",
