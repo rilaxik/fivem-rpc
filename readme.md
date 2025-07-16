@@ -34,3 +34,8 @@ Issues and pull requests are very welcome
 
 ## License
 Licensed under Custom Attribution-NoDerivs Software License
+
+## WIP
+- client observers to catch events between server and webview (subscribe-like behaviour)
+- client observers to prevent events (middleware-like behaviour)
+- player manager (transform player id to desired data straight from a listener)
