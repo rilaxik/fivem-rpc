@@ -38,6 +38,6 @@
 		"tsup": "^8.3.0"
 	},
 	"peerDependencies": {
-		"typescript": "^5"
+		"typescript": ">=5"
 	}
 }

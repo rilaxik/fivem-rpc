@@ -1,6 +1,6 @@
 {
 	"private": true,
-	"license": "CC0-1.0",
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
@@ -24,17 +24,16 @@
 	],
 	"type": "module",
 	"scripts": {
+		"build": "bun run --filter '*' build",
 		"check": "oxfmt --check && oxlint",
 		"format": "oxfmt",
 		"format:check": "oxfmt --check",
-		"lint": "oxlint"
+		"lint": "oxlint",
+		"typecheck": "bun run --filter '*' typecheck"
 	},
 	"devDependencies": {
-		"@types/bun": "^1.2.18",
 		"oxfmt": "^0.70.0",
-		"oxlint": "^1.85.0"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
+		"oxlint": "^1.85.0",
+		"typescript": "^7.0.2"
 	}
 }
