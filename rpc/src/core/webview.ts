@@ -1,7 +1,7 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
-import { generateUUID, stringify } from '../utils/funcs'
+import { stringify } from '../utils/funcs'
 import {
 	RPCEvents,
 	type RPCConfig,
@@ -9,9 +9,9 @@ import {
 	type RPCStateRaw,
 	type RPCStateWeb,
 } from '../utils/types'
-import { Wrapper } from './wrapper'
+import { RPCInstanceBase } from './base'
 
-export class RPCInstanceWebview extends Wrapper {
+export class RPCInstanceWebview extends RPCInstanceBase {
 	private readonly _emitterClient: Emitter
 	private readonly _emitterServer: Emitter
 
@@ -21,7 +21,7 @@ export class RPCInstanceWebview extends Wrapper {
 		this._emitterClient = new Emitter()
 		this._emitterServer = new Emitter()
 
-		this.console.log('[RPC] Initialized Webview')
+		console.log('[RPC] Initialized Webview')
 
 		window.addEventListener('message', (e: MessageEvent<RPCStateWeb>) => {
 			if (e.data.origin === RPCEvents.LISTENER_CLIENT) {
@@ -36,11 +36,9 @@ export class RPCInstanceWebview extends Wrapper {
 	// ===== HANDLERS =====
 
 	private async _handleClient(payload: RPCState) {
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:webview:accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
+		this.log(
+			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
+		)
 
 		if (payload.calledFrom === 'client' && payload.type === 'event') {
 			const response = await this.dispatch(this._emitterClient, payload)
@@ -50,11 +48,9 @@ export class RPCInstanceWebview extends Wrapper {
 	}
 
 	private async _handleServer(payload: RPCState) {
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:webview:accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
+		this.log(
+			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
+		)
 
 		if (payload.calledFrom === 'server' && payload.type === 'event') {
 			const response = await this.dispatch(this._emitterServer, payload)
@@ -75,25 +71,13 @@ export class RPCInstanceWebview extends Wrapper {
 			...args: CallbackArguments
 		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onClient ${eventName}`)
-		}
-
-		this._emitterClient.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterClient, 'onClient', eventName, cb)
 	}
 
 	public offClient<EventName extends keyof s.RPCEvents_ClientWebview>(
 		eventName: EventName,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:offClient ${eventName}`)
-		}
-
-		this._emitterClient.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterClient, 'offClient', eventName)
 	}
 
 	public async emitClient<
@@ -101,16 +85,7 @@ export class RPCInstanceWebview extends Wrapper {
 		Arguments extends Parameters<s.RPCEvents_WebviewClient[EventName]>,
 		Response extends ReturnType<s.RPCEvents_WebviewClient[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'webview',
-			calledTo: 'client',
-			error: null,
-			data: args.length ? args : null,
-			player: null,
-			type: 'event',
-		}
+		const payload = this.request(eventName, 'client', args, null)
 
 		return this._request<Awaited<Response>>(payload)
 	}
@@ -127,25 +102,13 @@ export class RPCInstanceWebview extends Wrapper {
 			...args: CallbackArguments
 		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onServer ${eventName}`)
-		}
-
-		this._emitterServer.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterServer, 'onServer', eventName, cb)
 	}
 
 	public offServer<EventName extends keyof s.RPCEvents_ServerWebview>(
 		eventName: EventName,
 	): RPCInstanceWebview {
-		if (this.debug) {
-			this.console.log(`[RPC]:offServer ${eventName}`)
-		}
-
-		this._emitterServer.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterServer, 'offServer', eventName)
 	}
 
 	public async emitServer<
@@ -153,16 +116,7 @@ export class RPCInstanceWebview extends Wrapper {
 		Arguments extends Parameters<s.RPCEvents_WebviewServer[EventName]>,
 		Response extends ReturnType<s.RPCEvents_WebviewServer[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'webview',
-			calledTo: 'server',
-			error: null,
-			data: args.length ? args : null,
-			player: null,
-			type: 'event',
-		}
+		const payload = this.request(eventName, 'server', args, null)
 
 		return this._request<Awaited<Response>>(payload)
 	}
@@ -179,25 +133,13 @@ export class RPCInstanceWebview extends Wrapper {
 			...args: CallbackArguments
 		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onSelf ${eventName}`)
-		}
-
-		this._emitterLocal.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
 	public offSelf<EventName extends keyof s.RPCEvents_Webview>(
 		eventName: EventName,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:offSelf ${eventName}`)
-		}
-
-		this._emitterLocal.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
 	public async emitSelf<
@@ -205,29 +147,7 @@ export class RPCInstanceWebview extends Wrapper {
 		Arguments extends Parameters<s.RPCEvents_Webview[EventName]>,
 		Response extends ReturnType<s.RPCEvents_Webview[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'webview',
-			calledTo: 'webview',
-			error: null,
-			data: args.length ? args : null,
-			player: null,
-			type: 'event',
-		}
-
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:accepted ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
-
-		this.assertListener(this._emitterLocal, payload.event)
-
-		return await this._emitterLocal.emit<Awaited<Response>>(
-			payload.event,
-			...(payload.data && payload.data.length > 0 ? payload.data : []),
-		)
+		return this.emitLocal<Awaited<Response>>(eventName, args)
 	}
 
 	// ===== UTILS =====

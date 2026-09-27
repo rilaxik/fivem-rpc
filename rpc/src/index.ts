@@ -1,7 +1,6 @@
 import { RPCInstanceClient } from './core/client'
 import { RPCInstanceServer } from './core/server'
 import { RPCInstanceWebview } from './core/webview'
-import { Wrapper } from './core/wrapper'
 import { RPCError } from './utils/errors'
 import {
 	type RPCConfig,
@@ -27,7 +26,7 @@ import {
  *
  * @class
  */
-class RPCFactory<T extends RPCEnvironment> extends Wrapper {
+class RPCFactory<T extends RPCEnvironment> {
 	private readonly operator:
 		| RPCInstanceServer
 		| RPCInstanceClient
@@ -40,9 +39,7 @@ class RPCFactory<T extends RPCEnvironment> extends Wrapper {
 	 * @param {boolean} opts.debug - Show additional logs
 	 */
 	constructor(opts: RPCConfig<T>) {
-		super(opts)
-
-		this.console.log('[RPC] Initializing...')
+		console.log('[RPC] Initializing...')
 
 		switch (opts.env) {
 			case 'server':

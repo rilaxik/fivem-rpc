@@ -4,7 +4,7 @@ import { RPCErrors } from './types'
  * Accepts any callback. Argument types are enforced by the typed `on*`/`emit*`
  * methods that wrap the emitter, not here.
  */
-type Handler = (...args: never[]) => unknown
+export type Handler = (...args: never[]) => unknown
 
 /** One handler per event: registering an event again replaces its handler. */
 export class Emitter {
