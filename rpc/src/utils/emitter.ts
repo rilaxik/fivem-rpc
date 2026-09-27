@@ -1,23 +1,22 @@
 import { RPCErrors } from './types'
 
+/**
+ * Accepts any callback. Argument types are enforced by the typed `on*`/`emit*`
+ * methods that wrap the emitter, not here.
+ */
+type Handler = (...args: never[]) => unknown
+
+/** One handler per event: registering an event again replaces its handler. */
 export class Emitter {
-	/** Map<event, [callback function, once]> */
-	private _storage: Map<string, [(...args: any[]) => any, boolean]>
+	/** Map<event, [handler, once]> */
+	private _storage = new Map<string, [Handler, boolean]>()
 
-	constructor() {
-		this._storage = new Map()
-	}
-
-	get _raw_storage() {
-		return this._storage
-	}
-
-	public on(event: string, cb: (...args: any[]) => any): this {
+	public on(event: string, cb: Handler): this {
 		this._storage.set(event, [cb, false])
 		return this
 	}
 
-	public once(event: string, cb: (...args: any[]) => any): this {
+	public once(event: string, cb: Handler): this {
 		this._storage.set(event, [cb, true])
 		return this
 	}
@@ -31,24 +30,17 @@ export class Emitter {
 		return this._storage.has(event)
 	}
 
-	public async emit<R>(event: string, ...args: any[]): Promise<R> {
-		return new Promise((res, rej) => {
-			if (!this._storage.has(event)) {
-				rej(RPCErrors.EVENT_NOT_REGISTERED)
-			}
+	public async emit<R>(event: string, ...args: unknown[]): Promise<R> {
+		const entry = this._storage.get(event)
+		if (!entry) {
+			throw new Error(RPCErrors.EVENT_NOT_REGISTERED)
+		}
 
-			const [cb, once] = this._storage.get(event) as [
-				(...args: any[]) => any,
-				boolean,
-			]
+		const [cb, once] = entry
+		if (once) {
+			this._storage.delete(event)
+		}
 
-			if (once) {
-				this._storage.delete(event)
-			}
-
-			Promise.resolve(cb(...args))
-				.then(res)
-				.catch(rej)
-		})
+		return (await cb(...(args as never[]))) as R
 	}
 }
