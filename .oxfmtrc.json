@@ -1,0 +1,20 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"tabWidth": 2,
+	"printWidth": 80,
+	"endOfLine": "crlf",
+	"singleQuote": true,
+	"semi": false,
+	"trailingComma": "all",
+	"arrowParens": "avoid",
+	"bracketSpacing": true,
+	"sortImports": true,
+	"ignorePatterns": ["**/dist", "bun.lock"],
+	"overrides": [
+		{
+			"files": ["*.md"],
+			"options": { "embeddedLanguageFormatting": "off" }
+		}
+	]
+}

@@ -1,0 +1,14 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["eslint", "typescript", "unicorn", "oxc", "import"],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "warn"
+	},
+	"rules": {
+		"typescript/no-explicit-any": "warn",
+		"typescript/no-unsafe-function-type": "warn",
+		"eslint/no-underscore-dangle": "off"
+	},
+	"ignorePatterns": ["**/dist"]
+}

@@ -1,20 +1,14 @@
 {
 	"name": "@entityseven/fivem-rpc",
-	"description": "FiveM RPC is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS",
 	"version": "0.1.0",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"files": [
-		"dist/**/*",
-		"readme.md",
-		"license.md"
-	],
+	"description": "FiveM RPC is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS",
 	"keywords": [
+		"fivem",
 		"fivem-rpc",
 		"fivem-rpc-shared-types",
-		"fivem",
 		"gta"
 	],
+	"license": "Custom-Attribution-NoDerivs",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
@@ -23,18 +17,24 @@
 			"url": "https://github.com/rilaxik/"
 		}
 	],
-	"license": "Custom-Attribution-NoDerivs",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/rilaxik/fivem-rpc.git"
 	},
+	"files": [
+		"dist/**/*",
+		"readme.md",
+		"license.md"
+	],
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "tsup"
 	},
 	"devDependencies": {
-		"@microsoft/api-extractor": "^7.47.9",
 		"@citizenfx/client": "^2.0.15015-1",
 		"@citizenfx/server": "^2.0.14862-1",
+		"@microsoft/api-extractor": "^7.47.9",
 		"tsup": "^8.3.0"
 	},
 	"peerDependencies": {

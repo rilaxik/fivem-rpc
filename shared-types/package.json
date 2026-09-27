@@ -1,20 +1,14 @@
 {
 	"name": "@entityseven/fivem-rpc-shared-types",
-	"description": "Shared (enhanced) types for @entityseven/fivem-rpc. Highly recommended to install together",
 	"version": "0.1.0",
-	"types": "types/types/index.d.ts",
-	"files": [
-		"types/**/*",
-		"readme.md",
-		"license.md"
-	],
+	"description": "Shared (enhanced) types for @entityseven/fivem-rpc. Highly recommended to install together",
 	"keywords": [
-		"fivem-rpc-shared-types",
-		"fivem-rpc",
 		"fivem",
+		"fivem-rpc",
+		"fivem-rpc-shared-types",
 		"gta"
 	],
-	"type": "module",
+	"license": "Custom-Attribution-NoDerivs",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
@@ -23,11 +17,17 @@
 			"url": "https://github.com/rilaxik/"
 		}
 	],
-	"license": "Custom-Attribution-NoDerivs",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/rilaxik/fivem-rpc.git"
 	},
+	"files": [
+		"types/**/*",
+		"readme.md",
+		"license.md"
+	],
+	"type": "module",
+	"types": "types/types/index.d.ts",
 	"peerDependencies": {
 		"typescript": "^5"
 	}

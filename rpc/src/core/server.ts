@@ -1,4 +1,5 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
+
 import { Emitter } from '../utils/emitter'
 import { generateUUID, parse, stringify } from '../utils/funcs'
 import { NATIVE_SERVER_EVENTS } from '../utils/native'
