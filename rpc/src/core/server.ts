@@ -1,7 +1,7 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
-import { RPCError } from '../utils/errors'
+import { RPCError, unknownNativeMessage } from '../utils/errors'
 import { stringify } from '../utils/funcs'
 import { NATIVE_SERVER_EVENTS } from '../utils/native'
 import {
@@ -202,7 +202,10 @@ export class RPCInstanceServer extends RPCInstanceBase {
 		CallbackArguments extends Parameters<RPCNativeServerEvents[EventName]>,
 	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
 		if (!NATIVE_SERVER_EVENTS.includes(eventName)) {
-			throw new RPCError(RPCErrors.UNKNOWN_NATIVE, RPCErrors.UNKNOWN_NATIVE)
+			throw new RPCError(
+				RPCErrors.UNKNOWN_NATIVE,
+				unknownNativeMessage(eventName, 'NATIVE_SERVER_EVENTS'),
+			)
 		}
 
 		this.log(`onNativeEvent ${eventName}`)

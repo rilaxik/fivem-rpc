@@ -1,7 +1,7 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
-import { RPCError } from '../utils/errors'
+import { RPCError, unknownNativeMessage } from '../utils/errors'
 import { stringify, stringifyWeb } from '../utils/funcs'
 import {
 	NATIVE_CLIENT_EVENTS,
@@ -12,7 +12,7 @@ import {
 	RPCErrors,
 	RPCEvents,
 	type RPCNativeClientEvents,
-	type RPCNativeClientNetworksEvents,
+	type RPCNativeClientNetworkEvents,
 	type RPCState,
 	type RPCStateRaw,
 	type RPCStateWeb,
@@ -233,7 +233,10 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		CallbackArguments extends Parameters<RPCNativeClientEvents[EventName]>,
 	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
 		if (!NATIVE_CLIENT_EVENTS.includes(eventName)) {
-			throw new RPCError(RPCErrors.UNKNOWN_NATIVE, RPCErrors.UNKNOWN_NATIVE)
+			throw new RPCError(
+				RPCErrors.UNKNOWN_NATIVE,
+				unknownNativeMessage(eventName, 'NATIVE_CLIENT_EVENTS'),
+			)
 		}
 
 		this.log(`onNativeEvent ${eventName}`)
@@ -244,13 +247,16 @@ export class RPCInstanceClient extends RPCInstanceBase {
 	}
 
 	public onNativeNetworkEvent<
-		EventName extends keyof RPCNativeClientNetworksEvents,
+		EventName extends keyof RPCNativeClientNetworkEvents,
 		CallbackArguments extends Parameters<
-			RPCNativeClientNetworksEvents[EventName]
+			RPCNativeClientNetworkEvents[EventName]
 		>,
 	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
 		if (!NATIVE_CLIENT_NETWORK_EVENTS.includes(eventName)) {
-			throw new RPCError(RPCErrors.UNKNOWN_NATIVE, RPCErrors.UNKNOWN_NATIVE)
+			throw new RPCError(
+				RPCErrors.UNKNOWN_NATIVE,
+				unknownNativeMessage(eventName, 'NATIVE_CLIENT_NETWORK_EVENTS'),
+			)
 		}
 
 		this.log(`onNativeNetworkEvent ${eventName}`)

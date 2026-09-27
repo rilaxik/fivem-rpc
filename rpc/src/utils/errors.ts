@@ -67,6 +67,11 @@ export function notRegisteredMessage(
 }
 
 /** **Internal** */
+export function unknownNativeMessage(event: string, list: string): string {
+	return `"${event}" is not in ${list}. Events not listed there can be registered with FiveM's on("${event}", ...) directly.`
+}
+
+/** **Internal** */
 export function handlerErrorMessage(
 	event: string,
 	receiver: RPCEnvironment,
