@@ -48,18 +48,16 @@
 		"prepublishOnly": "bun run build",
 		"typecheck": "tsc --noEmit"
 	},
+	"dependencies": {
+		"@entityseven/fivem-rpc-shared-types": "workspace:^"
+	},
 	"devDependencies": {
-		"@entityseven/fivem-rpc-shared-types": "workspace:*",
 		"tsdown": "^0.23.0"
 	},
 	"peerDependencies": {
-		"@entityseven/fivem-rpc-shared-types": "^1.0.0",
 		"typescript": ">=5"
 	},
 	"peerDependenciesMeta": {
-		"@entityseven/fivem-rpc-shared-types": {
-			"optional": true
-		},
 		"typescript": {
 			"optional": true
 		}

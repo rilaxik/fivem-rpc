@@ -12,16 +12,16 @@
     "rpc": {
       "name": "@entityseven/fivem-rpc",
       "version": "0.1.0",
+      "dependencies": {
+        "@entityseven/fivem-rpc-shared-types": "workspace:^",
+      },
       "devDependencies": {
-        "@entityseven/fivem-rpc-shared-types": "workspace:*",
         "tsdown": "^0.23.0",
       },
       "peerDependencies": {
-        "@entityseven/fivem-rpc-shared-types": "^1.0.0",
         "typescript": ">=5",
       },
       "optionalPeers": [
-        "@entityseven/fivem-rpc-shared-types",
         "typescript",
       ],
     },

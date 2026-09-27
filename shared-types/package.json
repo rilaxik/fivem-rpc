@@ -28,12 +28,17 @@
 		"directory": "shared-types"
 	},
 	"files": [
-		"types/**/*",
+		"index.d.ts",
 		"readme.md",
 		"license.md"
 	],
-	"type": "module",
-	"types": "types/types/index.d.ts",
+	"types": "./index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts"
+		},
+		"./package.json": "./package.json"
+	},
 	"peerDependencies": {
 		"typescript": ">=5"
 	},

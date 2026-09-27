@@ -11,6 +11,13 @@ import {
 	type RPCNativeServerEvents,
 	type RPCStateRaw,
 } from '../utils/types'
+import type {
+	RPCCommandName,
+	RPCEventArgs,
+	RPCEventName,
+	RPCEventResult,
+	RPCListener,
+} from '../utils/typing'
 import { RPCInstanceBase } from './base'
 
 export class RPCInstanceServer extends RPCInstanceBase {
@@ -68,46 +75,39 @@ export class RPCInstanceServer extends RPCInstanceBase {
 
 	// ===== CLIENT =====
 
-	public onClient<
-		EventName extends keyof s.RPCEvents_ClientServer,
-		CallbackArguments extends Parameters<s.RPCEvents_ClientServer[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_ClientServer[EventName]>,
-	>(
+	public onClient<EventName extends RPCEventName<s.RPCEvents_ClientServer>>(
 		eventName: EventName,
-		cb: (
-			player: number,
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_ClientServer, EventName, [player: number]>,
 	): this {
 		return this.listen(this._emitterClient, 'onClient', eventName, cb)
 	}
 
-	public offClient<EventName extends keyof s.RPCEvents_ClientServer>(
+	public offClient<EventName extends RPCEventName<s.RPCEvents_ClientServer>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterClient, 'offClient', eventName)
 	}
 
 	public async emitClient<
-		EventName extends keyof s.RPCEvents_ServerClient,
-		Arguments extends Parameters<s.RPCEvents_ServerClient[EventName]>,
-		Response extends ReturnType<s.RPCEvents_ServerClient[EventName]>,
+		EventName extends RPCEventName<s.RPCEvents_ServerClient>,
 	>(
 		player: number,
 		eventName: EventName,
-		...args: Arguments
-	): Promise<Awaited<Response>> {
+		...args: RPCEventArgs<s.RPCEvents_ServerClient, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_ServerClient, EventName>> {
 		const payload = this.request(eventName, 'client', args, player)
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload, player)
+		return this._pending.wait(payload, player)
 	}
 
 	public async emitClientEveryone<
-		EventName extends keyof s.RPCEvents_ServerClient,
-		Arguments extends Parameters<s.RPCEvents_ServerClient[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<void> {
+		EventName extends RPCEventName<s.RPCEvents_ServerClient>,
+	>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_ServerClient, EventName>
+	): Promise<void> {
 		const payload = this.request(eventName, 'client', args, -1, 'broadcast')
 
 		emitNet(RPCEvents.LISTENER_SERVER, -1, stringify(payload))
@@ -115,79 +115,60 @@ export class RPCInstanceServer extends RPCInstanceBase {
 
 	// ===== WEBVIEW =====
 
-	public onWebview<
-		EventName extends keyof s.RPCEvents_WebviewServer,
-		CallbackArguments extends Parameters<s.RPCEvents_WebviewServer[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_WebviewServer[EventName]>,
-	>(
+	public onWebview<EventName extends RPCEventName<s.RPCEvents_WebviewServer>>(
 		eventName: EventName,
-		cb: (
-			player: number,
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_WebviewServer, EventName, [player: number]>,
 	): this {
 		return this.listen(this._emitterWeb, 'onWebview', eventName, cb)
 	}
 
-	public offWebview<EventName extends keyof s.RPCEvents_WebviewServer>(
+	public offWebview<EventName extends RPCEventName<s.RPCEvents_WebviewServer>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterWeb, 'offWebview', eventName)
 	}
 
 	public async emitWebview<
-		EventName extends keyof s.RPCEvents_ServerWebview,
-		Arguments extends Parameters<s.RPCEvents_ServerWebview[EventName]>,
-		Response extends ReturnType<s.RPCEvents_ServerWebview[EventName]>,
+		EventName extends RPCEventName<s.RPCEvents_ServerWebview>,
 	>(
 		player: number,
 		eventName: EventName,
-		...args: Arguments
-	): Promise<Awaited<Response>> {
+		...args: RPCEventArgs<s.RPCEvents_ServerWebview, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_ServerWebview, EventName>> {
 		const payload = this.request(eventName, 'webview', args, player)
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload, player)
+		return this._pending.wait(payload, player)
 	}
 
 	// ===== SELF =====
 
-	public onSelf<
-		EventName extends keyof s.RPCEvents_Server,
-		CallbackArguments extends Parameters<s.RPCEvents_Server[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_Server[EventName]>,
-	>(
+	public onSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
 		eventName: EventName,
-		cb: (
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_Server, EventName, [player: number]>,
 	): this {
 		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
-	public offSelf<EventName extends keyof s.RPCEvents_Server>(
+	public offSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
-	public async emitSelf<
-		EventName extends keyof s.RPCEvents_Server,
-		Arguments extends Parameters<s.RPCEvents_Server[EventName]>,
-		Response extends ReturnType<s.RPCEvents_Server[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		return this.emitLocal<Awaited<Response>>(eventName, args)
+	public async emitSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_Server, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_Server, EventName>> {
+		return this.emitLocal(eventName, args)
 	}
 
 	// ===== OTHER =====
 
-	public onCommand<
-		CommandName extends s.RPCCommands_Server,
-		CallbackArguments extends unknown[],
-	>(
+	public onCommand<CommandName extends RPCCommandName<s.RPCCommands_Server>>(
 		command: CommandName,
-		cb: (player: number, args: CallbackArguments, commandRaw: string) => void,
+		cb: (player: number, args: string[], rawCommand: string) => void,
 		restricted = false,
 	): this {
 		this.log(`onCommand ${command}`)
@@ -197,10 +178,10 @@ export class RPCInstanceServer extends RPCInstanceBase {
 		return this
 	}
 
-	public onNativeEvent<
-		EventName extends keyof RPCNativeServerEvents,
-		CallbackArguments extends Parameters<RPCNativeServerEvents[EventName]>,
-	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
+	public onNativeEvent<EventName extends keyof RPCNativeServerEvents>(
+		eventName: EventName,
+		cb: (...args: Parameters<RPCNativeServerEvents[EventName]>) => void,
+	): this {
 		if (!NATIVE_SERVER_EVENTS.includes(eventName)) {
 			throw new RPCError(
 				RPCErrors.UNKNOWN_NATIVE,

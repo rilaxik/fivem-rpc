@@ -9,6 +9,12 @@ import {
 	type RPCStateRaw,
 	type RPCStateWeb,
 } from '../utils/types'
+import type {
+	RPCEventArgs,
+	RPCEventName,
+	RPCEventResult,
+	RPCListener,
+} from '../utils/typing'
 import { RPCInstanceBase } from './base'
 
 export class RPCInstanceWebview extends RPCInstanceBase {
@@ -64,93 +70,76 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 
 	// ===== CLIENT =====
 
-	public onClient<
-		EventName extends keyof s.RPCEvents_ClientWebview,
-		CallbackArguments extends Parameters<s.RPCEvents_ClientWebview[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_ClientWebview[EventName]>,
-	>(
+	public onClient<EventName extends RPCEventName<s.RPCEvents_ClientWebview>>(
 		eventName: EventName,
-		cb: (
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_ClientWebview, EventName>,
 	): this {
 		return this.listen(this._emitterClient, 'onClient', eventName, cb)
 	}
 
-	public offClient<EventName extends keyof s.RPCEvents_ClientWebview>(
+	public offClient<EventName extends RPCEventName<s.RPCEvents_ClientWebview>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterClient, 'offClient', eventName)
 	}
 
 	public async emitClient<
-		EventName extends keyof s.RPCEvents_WebviewClient,
-		Arguments extends Parameters<s.RPCEvents_WebviewClient[EventName]>,
-		Response extends ReturnType<s.RPCEvents_WebviewClient[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
+		EventName extends RPCEventName<s.RPCEvents_WebviewClient>,
+	>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_WebviewClient, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_WebviewClient, EventName>> {
 		const payload = this.request(eventName, 'client', args, null)
 
-		return this._request<Awaited<Response>>(payload)
+		return this._request(payload)
 	}
 
 	// ===== SERVER =====
 
-	public onServer<
-		EventName extends keyof s.RPCEvents_ServerWebview,
-		CallbackArguments extends Parameters<s.RPCEvents_ServerWebview[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_ServerWebview[EventName]>,
-	>(
+	public onServer<EventName extends RPCEventName<s.RPCEvents_ServerWebview>>(
 		eventName: EventName,
-		cb: (
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_ServerWebview, EventName>,
 	): this {
 		return this.listen(this._emitterServer, 'onServer', eventName, cb)
 	}
 
-	public offServer<EventName extends keyof s.RPCEvents_ServerWebview>(
+	public offServer<EventName extends RPCEventName<s.RPCEvents_ServerWebview>>(
 		eventName: EventName,
-	): RPCInstanceWebview {
+	): this {
 		return this.unlisten(this._emitterServer, 'offServer', eventName)
 	}
 
 	public async emitServer<
-		EventName extends keyof s.RPCEvents_WebviewServer,
-		Arguments extends Parameters<s.RPCEvents_WebviewServer[EventName]>,
-		Response extends ReturnType<s.RPCEvents_WebviewServer[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
+		EventName extends RPCEventName<s.RPCEvents_WebviewServer>,
+	>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_WebviewServer, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_WebviewServer, EventName>> {
 		const payload = this.request(eventName, 'server', args, null)
 
-		return this._request<Awaited<Response>>(payload)
+		return this._request(payload)
 	}
 
 	// ===== SELF =====
 
-	public onSelf<
-		EventName extends keyof s.RPCEvents_Webview,
-		CallbackArguments extends Parameters<s.RPCEvents_Webview[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_Webview[EventName]>,
-	>(
+	public onSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
 		eventName: EventName,
-		cb: (
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_Webview, EventName>,
 	): this {
 		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
-	public offSelf<EventName extends keyof s.RPCEvents_Webview>(
+	public offSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
-	public async emitSelf<
-		EventName extends keyof s.RPCEvents_Webview,
-		Arguments extends Parameters<s.RPCEvents_Webview[EventName]>,
-		Response extends ReturnType<s.RPCEvents_Webview[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		return this.emitLocal<Awaited<Response>>(eventName, args)
+	public async emitSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_Webview, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_Webview, EventName>> {
+		return this.emitLocal(eventName, args)
 	}
 
 	// ===== UTILS =====
