@@ -1,7 +1,7 @@
 import { RPCInstanceClient } from './core/client'
 import { RPCInstanceServer } from './core/server'
 import { RPCInstanceWebview } from './core/webview'
-import { RPCError } from './utils/errors'
+import { RPCError, unknownEnvironmentMessage } from './utils/errors'
 import {
 	type RPCConfig,
 	type RPCEnvironment,
@@ -10,64 +10,56 @@ import {
 } from './utils/types'
 
 /**
- * RPC Factory
+ * Creates the RPC instance for one environment. Create exactly one per
+ * environment (server, client, webview) and export it from a local module.
+ *
+ * @throws {@link RPCError} `UNKNOWN_ENVIRONMENT` if `config.env` is not
+ *   `'server'`, `'client'` or `'webview'`
  *
  * @example
- * // returns RPCInstanceServer
- * const rpc = new RPCFactory({ env: "server" }).get()
- *
- * @example
- * // returns RPCInstanceClient
- * const rpc = new RPCFactory({ env: "client" }).get()
- *
- * @example
- * // returns RPCInstanceWebview
- * const rpc = new RPCFactory({ env: "webview" }).get()
- *
- * @class
+ * // server/rpc.ts
+ * import { createRPC } from '@entityseven/fivem-rpc'
+ * export const rpc = createRPC({ env: 'server' })
  */
-class RPCFactory<T extends RPCEnvironment> {
-	private readonly operator:
-		| RPCInstanceServer
-		| RPCInstanceClient
-		| RPCInstanceWebview
-
-	/**
-	 * Instance options
-	 * @param {object} opts - Options
-	 * @param {string} opts.env - Instance environment
-	 * @param {boolean} opts.debug - Show additional logs
-	 */
-	constructor(opts: RPCConfig<T>) {
-		console.log('[RPC] Initializing...')
-
-		switch (opts.env) {
-			case 'server':
-				this.operator = new RPCInstanceServer(opts as RPCConfig<'server'>)
-				break
-			case 'client':
-				this.operator = new RPCInstanceClient(opts as RPCConfig<'client'>)
-				break
-			case 'webview':
-				this.operator = new RPCInstanceWebview(opts as RPCConfig<'webview'>)
-				break
-			default:
-				throw new RPCError(
-					RPCErrors.UNKNOWN_ENVIRONMENT,
-					RPCErrors.UNKNOWN_ENVIRONMENT,
-				)
-		}
-	}
-
-	public get(): RPCEnvironmentResolved<T> {
-		return this.operator as RPCEnvironmentResolved<T>
+export function createRPC<T extends RPCEnvironment>(
+	config: RPCConfig<T>,
+): RPCEnvironmentResolved<T> {
+	switch (config.env) {
+		case 'server':
+			return new RPCInstanceServer(
+				config as RPCConfig<'server'>,
+			) as RPCEnvironmentResolved<T>
+		case 'client':
+			return new RPCInstanceClient(
+				config as RPCConfig<'client'>,
+			) as RPCEnvironmentResolved<T>
+		case 'webview':
+			return new RPCInstanceWebview(
+				config as RPCConfig<'webview'>,
+			) as RPCEnvironmentResolved<T>
+		default:
+			throw new RPCError(
+				RPCErrors.UNKNOWN_ENVIRONMENT,
+				unknownEnvironmentMessage(config.env),
+			)
 	}
 }
 
-export { RPCFactory }
-export * from './utils/types'
+export type { RPCInstanceClient } from './core/client'
+export type { RPCInstanceServer } from './core/server'
+export type { RPCInstanceWebview } from './core/webview'
 export { RPCError, type RPCErrorDetails } from './utils/errors'
-export * from './utils/native'
-export type * from './core/server'
-export type * from './core/client'
-export type * from './core/webview'
+export {
+	NATIVE_CLIENT_EVENTS,
+	NATIVE_CLIENT_NETWORK_EVENTS,
+	NATIVE_SERVER_EVENTS,
+} from './utils/native'
+export {
+	type RPCConfig,
+	type RPCEnvironment,
+	RPCErrors,
+	type RPCNativeClientEvents,
+	type RPCNativeClientNetworkEvents,
+	type RPCNativeClientNetworkEventsNames,
+	type RPCNativeServerEvents,
+} from './utils/types'

@@ -17,13 +17,15 @@ export type RPCEnvironmentResolved<T extends RPCEnvironment> =
 				? RPCInstanceWebview
 				: never
 
-/**
- * `RPCFactory` config.
- *
- * If environment does not match will throw `RPCErrors.UNKNOWN_ENVIRONMENT`
- */
-export type RPCConfig<T extends RPCEnvironment | unknown> = {
+/** `createRPC` config */
+export type RPCConfig<T extends RPCEnvironment = RPCEnvironment> = {
+	/** Environment this instance runs in */
 	env: T
+	/**
+	 * Log every registration, call and incoming payload
+	 *
+	 * @defaultValue false
+	 */
 	debug?: boolean
 	/**
 	 * Milliseconds to wait for a response before the call rejects with
@@ -103,7 +105,7 @@ export enum RPCEvents {
 export enum RPCErrors {
 	EVENT_NOT_REGISTERED = 'Event not registered',
 	UNKNOWN_NATIVE = 'Unknown native event',
-	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
+	UNKNOWN_ENVIRONMENT = 'Unknown environment',
 	TIMEOUT = 'Timed out waiting for response',
 	HANDLER_ERROR = 'Listener threw an error',
 }

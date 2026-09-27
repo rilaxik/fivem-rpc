@@ -67,6 +67,11 @@ export function notRegisteredMessage(
 }
 
 /** **Internal** */
+export function unknownEnvironmentMessage(env: unknown): string {
+	return `Unknown env ${JSON.stringify(env)}. Use createRPC({ env: 'server' }), 'client' or 'webview'.`
+}
+
+/** **Internal** */
 export function unknownNativeMessage(event: string, list: string): string {
 	return `"${event}" is not in ${list}. Events not listed there can be registered with FiveM's on("${event}", ...) directly.`
 }
