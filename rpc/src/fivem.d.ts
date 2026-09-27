@@ -21,11 +21,14 @@ declare function RegisterCommand<A extends unknown[]>(
 	restricted: boolean,
 ): void
 
+// ===== SERVER =====
+
+/** Player that sent the current net event. Only valid synchronously in the handler */
+declare var source: number
+
 // ===== CLIENT =====
 
 declare function RegisterNuiCallbackType(callbackType: string): void
-declare function GetPlayerServerId(player: number): number
-declare function PlayerId(): number
 declare function SetNuiFocus(hasFocus: boolean, hasCursor: boolean): void
 declare function SendNuiMessage(jsonString: string): boolean
 

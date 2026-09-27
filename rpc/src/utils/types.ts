@@ -48,6 +48,7 @@ export type RPCState = {
 	calledTo: RPCEnvironment
 	error: RPCErrorPayload | null
 	data: unknown[] | null
+	/** Server id of the player involved. The server fills it from `source`, never trusting the sender */
 	player: number | null
 	type: RPCEventType
 }
@@ -94,7 +95,6 @@ export enum RPCEvents {
  */
 export enum RPCErrors {
 	EVENT_NOT_REGISTERED = 'Event not registered',
-	NO_PLAYER = 'No player (failed to resolve from local index)',
 	UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
 	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
 	TIMEOUT = 'Timed out waiting for response',

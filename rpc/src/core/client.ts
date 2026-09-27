@@ -86,7 +86,6 @@ export class RPCInstanceClient extends RPCInstanceBase {
 				return this.dispatch(this._emitterWeb, payload)
 			}
 			if (payload.calledTo === 'server') {
-				payload.player = GetPlayerServerId(PlayerId())
 				emitNet(RPCEvents.LISTENER_WEB, stringify(payload))
 
 				return this._pending.wait<RPCState>(payload)
@@ -100,7 +99,6 @@ export class RPCInstanceClient extends RPCInstanceBase {
 				return { status: 'ok' }
 			}
 			if (payload.calledTo === 'server') {
-				payload.player = GetPlayerServerId(PlayerId())
 				emitNet(RPCEvents.LISTENER_WEB, stringify(payload))
 
 				return { status: 'ok' }
@@ -135,12 +133,7 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		Arguments extends Parameters<s.RPCEvents_ClientServer[EventName]>,
 		Response extends ReturnType<s.RPCEvents_ClientServer[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload = this.request(
-			eventName,
-			'server',
-			args,
-			GetPlayerServerId(PlayerId()),
-		)
+		const payload = this.request(eventName, 'server', args, null)
 
 		emitNet(RPCEvents.LISTENER_CLIENT, stringify(payload))
 
@@ -173,7 +166,7 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		Arguments extends Parameters<s.RPCEvents_ClientWebview[EventName]>,
 		Response extends ReturnType<s.RPCEvents_ClientWebview[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload = this.request(eventName, 'webview', args, PlayerId())
+		const payload = this.request(eventName, 'webview', args, null)
 
 		this._sendWebMessage({
 			origin: RPCEvents.LISTENER_CLIENT,

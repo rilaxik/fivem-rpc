@@ -4,13 +4,14 @@ import {
 	notRegisteredMessage,
 	RPCError,
 } from '../utils/errors'
-import { generateUUID } from '../utils/funcs'
+import { generateUUID, isRPCState, parse } from '../utils/funcs'
 import { Pending } from '../utils/pending'
 import {
 	type RPCConfig,
 	type RPCEnvironment,
 	RPCErrors,
 	type RPCState,
+	type RPCStateRaw,
 } from '../utils/types'
 
 export class RPCInstanceBase {
@@ -36,7 +37,7 @@ export class RPCInstanceBase {
 		emitter.on(event, cb)
 		return this
 	}
-	
+
 	/** Unregisters `cb` for `event` on `emitter`; `method` is only for logs */
 	protected unlisten(emitter: Emitter, method: string, event: string): this {
 		this.log(`${method} ${event}`)
@@ -76,13 +77,44 @@ export class RPCInstanceBase {
 		return this._emitterLocal.emit<R>(event, ...args)
 	}
 
-	/** Settles the call waiting for `response`; ignores late or unexpected ones */
-	protected settle(response: RPCState): void {
+	/**
+	 * Settles the call waiting for `response`; ignores late or unexpected ones.
+	 *
+	 * @param peer - who sent the response (server: `source`)
+	 */
+	protected settle(response: RPCState, peer?: number): void {
 		const found = response.error
-			? this._pending.reject(response.uuid, RPCError.fromResponse(response))
-			: this._pending.resolve(response.uuid, response.data?.[0])
+			? this._pending.reject(
+					response.uuid,
+					RPCError.fromResponse(response),
+					peer,
+				)
+			: this._pending.resolve(response.uuid, response.data?.[0], peer)
 
 		if (!found) this.logIgnored(response)
+	}
+
+	/**
+	 * Parses and validates an incoming payload. Anything else sent on the RPC
+	 * channels (broken JSON, other shapes) is dropped: `null`.
+	 */
+	protected accept(input: RPCStateRaw | unknown): RPCState | null {
+		const payload =
+			typeof input === 'string'
+				? parse(input as RPCStateRaw)
+				: isRPCState(input)
+					? input
+					: null
+
+		if (!payload) {
+			this.log(`dropped invalid payload ${String(input).slice(0, 200)}`)
+			return null
+		}
+
+		this.log(
+			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
+		)
+		return payload
 	}
 
 	/**

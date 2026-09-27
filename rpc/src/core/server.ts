@@ -25,71 +25,44 @@ export class RPCInstanceServer extends RPCInstanceBase {
 
 		console.log('[RPC] Initialized Server')
 
-		onNet(RPCEvents.LISTENER_CLIENT, this._handleClient.bind(this))
-		onNet(RPCEvents.LISTENER_WEB, this._handleWeb.bind(this))
+		// `source` must be read synchronously, before any await
+		onNet(RPCEvents.LISTENER_CLIENT, (raw: RPCStateRaw) =>
+			this._handle(raw, source, 'client', this._emitterClient),
+		)
+		onNet(RPCEvents.LISTENER_WEB, (raw: RPCStateRaw) =>
+			this._handle(raw, source, 'webview', this._emitterWeb),
+		)
 	}
 
 	// ===== HANDLERS =====
 
-	private async _handleClient(payloadRaw: RPCStateRaw) {
+	/**
+	 * Handles a payload from a client or its webview.
+	 *
+	 * @param player - FiveM `source` of the net event: the only trusted player id,
+	 *   whatever the payload claims
+	 */
+	private async _handle(
+		payloadRaw: RPCStateRaw,
+		player: number,
+		from: 'client' | 'webview',
+		emitter: Emitter,
+	) {
 		const payload = this.accept(payloadRaw)
-		if (!payload) return
+		if (!payload || payload.calledFrom !== from) return
 
-		if (payload.calledFrom === 'client') {
-			if (payload.type === 'event') {
-				if (payload.player === null || payload.player === -1) {
-					// nobody to reply to, the caller times out
-					console.error(
-						new RPCError(
-							RPCErrors.NO_PLAYER,
-							`${RPCErrors.NO_PLAYER}: "${payload.event}" from ${payload.calledFrom}`,
-						),
-					)
-					return
-				}
-
-				const response = await this.dispatch(
-					this._emitterClient,
-					payload,
-					payload.player,
-				)
-
-				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
-			}
-			if (payload.type === 'response') {
-				this.settle(payload)
-			}
+		// not sent by a player, e.g. a server-side trigger of the RPC channel
+		if (!(player > 0)) {
+			this.log(`dropped ${payload.event}: no player source`)
+			return
 		}
-	}
+		payload.player = player
 
-	private async _handleWeb(payloadRaw: RPCStateRaw) {
-		const payload = this.accept(payloadRaw)
-		if (!payload) return
-
-		if (payload.calledFrom === 'webview') {
-			if (payload.type === 'event') {
-				if (payload.player === null || payload.player === -1) {
-					// nobody to reply to, the caller times out
-					console.error(
-						new RPCError(
-							RPCErrors.NO_PLAYER,
-							`${RPCErrors.NO_PLAYER}: "${payload.event}" from ${payload.calledFrom}`,
-						),
-					)
-					return
-				}
-
-				const response = await this.dispatch(
-					this._emitterWeb,
-					payload,
-					payload.player,
-				)
-
-				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
-			}
-			if (payload.type === 'response') {
-				this.settle(payload)
-			}
+		if (payload.type === 'event') {
+			const response = await this.dispatch(emitter, payload, player)
+			emitNet(RPCEvents.LISTENER_SERVER, player, stringify(response))
+		} else {
+			this.settle(payload, player)
 		}
 	}
 
@@ -128,7 +101,7 @@ export class RPCInstanceServer extends RPCInstanceBase {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload)
+		return this._pending.wait<Awaited<Response>>(payload, player)
 	}
 
 	public async emitClientEveryone<
@@ -175,7 +148,7 @@ export class RPCInstanceServer extends RPCInstanceBase {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload)
+		return this._pending.wait<Awaited<Response>>(payload, player)
 	}
 
 	// ===== SELF =====
