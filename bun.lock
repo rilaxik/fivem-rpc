@@ -13,14 +13,18 @@
       "name": "@entityseven/fivem-rpc",
       "version": "0.1.0",
       "devDependencies": {
-        "@citizenfx/client": "^2.0.15015-1",
-        "@citizenfx/server": "^2.0.14862-1",
+        "@entityseven/fivem-rpc-shared-types": "workspace:*",
         "@microsoft/api-extractor": "^7.47.9",
         "tsup": "^8.3.0",
       },
       "peerDependencies": {
+        "@entityseven/fivem-rpc-shared-types": "^1.0.0",
         "typescript": ">=5",
       },
+      "optionalPeers": [
+        "@entityseven/fivem-rpc-shared-types",
+        "typescript",
+      ],
     },
     "shared-types": {
       "name": "@entityseven/fivem-rpc-shared-types",
@@ -31,10 +35,6 @@
     },
   },
   "packages": {
-    "@citizenfx/client": ["@citizenfx/client@2.0.15015-1", "", {}, "sha512-gm0/fWM0/Wn5Hny+cnSRsBc73Opz1PPKS4LKCraIE477tQ0uGNVACoeTQqxRJz54Lu09KeA4cCfocVmefVAqUA=="],
-
-    "@citizenfx/server": ["@citizenfx/server@2.0.14862-1", "", {}, "sha512-I6XnxIGBhskPe9S+q1OQLDqs6TYw1RhX06K6jUg+n0hGITYools6VBIIhdPe2uUlHA+76qJajQlV9ONeR3mDig=="],
-
     "@entityseven/fivem-rpc": ["@entityseven/fivem-rpc@workspace:rpc"],
 
     "@entityseven/fivem-rpc-shared-types": ["@entityseven/fivem-rpc-shared-types@workspace:shared-types"],

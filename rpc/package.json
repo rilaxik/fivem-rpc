@@ -8,13 +8,18 @@
 		"fivem-rpc-shared-types",
 		"gta"
 	],
-	"license": "Custom-Attribution-NoDerivs",
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
 			"name": "Danya H",
 			"email": "dev.rilaxik@gmail.com",
 			"url": "https://github.com/rilaxik/"
+		},
+		{
+			"name": "Oleksandr Honcharov",
+			"email": "0976053529@ukr.net",
+			"url": "https://github.com/SashaGoncharov19/"
 		}
 	],
 	"repository": {
@@ -29,15 +34,25 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "tsup"
+		"build": "tsup",
+		"prepublishOnly": "bun run build",
+		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
-		"@citizenfx/client": "^2.0.15015-1",
-		"@citizenfx/server": "^2.0.14862-1",
+		"@entityseven/fivem-rpc-shared-types": "workspace:*",
 		"@microsoft/api-extractor": "^7.47.9",
 		"tsup": "^8.3.0"
 	},
 	"peerDependencies": {
+		"@entityseven/fivem-rpc-shared-types": "^1.0.0",
 		"typescript": ">=5"
+	},
+	"peerDependenciesMeta": {
+		"@entityseven/fivem-rpc-shared-types": {
+			"optional": true
+		},
+		"typescript": {
+			"optional": true
+		}
 	}
 }
