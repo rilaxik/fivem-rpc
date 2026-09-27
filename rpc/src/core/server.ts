@@ -15,17 +15,13 @@ import { Wrapper } from './wrapper'
 
 export class RPCInstanceServer extends Wrapper {
 	private readonly _emitterClient: Emitter
-	private readonly _pendingClient: Emitter
 	private readonly _emitterWeb: Emitter
-	private readonly _pendingWeb: Emitter
 
 	constructor(props: RPCConfig<'server'>) {
 		super(props)
 
 		this._emitterClient = new Emitter()
-		this._pendingClient = new Emitter()
 		this._emitterWeb = new Emitter()
-		this._pendingWeb = new Emitter()
 
 		this.console.log('[RPC] Initialized Server')
 
@@ -78,10 +74,7 @@ export class RPCInstanceServer extends Wrapper {
 				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
 			}
 			if (payload.type === 'response') {
-				await this._pendingClient.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
+				this.resolvePending(payload)
 			}
 		}
 	}
@@ -129,10 +122,7 @@ export class RPCInstanceServer extends Wrapper {
 				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
 			}
 			if (payload.type === 'response') {
-				await this._pendingWeb.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
+				this.resolvePending(payload)
 			}
 		}
 	}
@@ -193,9 +183,7 @@ export class RPCInstanceServer extends Wrapper {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingClient.once(payload.uuid, res)
-		})
+		return this._pending.wait<Awaited<Response>>(payload.uuid)
 	}
 
 	public async emitClientEveryone<
@@ -272,9 +260,7 @@ export class RPCInstanceServer extends Wrapper {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingWeb.once(payload.uuid, res)
-		})
+		return this._pending.wait<Awaited<Response>>(payload.uuid)
 	}
 
 	// ===== SELF =====

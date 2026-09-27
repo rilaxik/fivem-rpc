@@ -144,7 +144,7 @@ export class RPCInstanceWebview extends Wrapper {
 			type: 'event',
 		}
 
-		return await this._createHttpClientRequest<Awaited<Response>>(payload)
+		return this._request<Awaited<Response>>(payload)
 	}
 
 	// ===== SERVER =====
@@ -196,7 +196,7 @@ export class RPCInstanceWebview extends Wrapper {
 			type: 'event',
 		}
 
-		return await this._createHttpClientRequest<Awaited<Response>>(payload)
+		return this._request<Awaited<Response>>(payload)
 	}
 
 	// ===== SELF =====
@@ -263,6 +263,16 @@ export class RPCInstanceWebview extends Wrapper {
 	}
 
 	// ===== UTILS =====
+
+	/** Sends an event to the client and waits for its response (with timeout) */
+	private _request<R>(payload: RPCState): Promise<R> {
+		const response = this._pending.wait<R>(payload.uuid)
+		this._createHttpClientRequest(payload).then(
+			data => this._pending.resolve(payload.uuid, data),
+			(error: Error) => this._pending.reject(payload.uuid, error),
+		)
+		return response
+	}
 
 	private async _createHttpClientRequest<R>(
 		data: RPCStateRaw | RPCState,

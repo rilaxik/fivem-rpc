@@ -24,6 +24,13 @@ export type RPCEnvironmentResolved<T extends RPCEnvironment> =
 export type RPCConfig<T extends RPCEnvironment | unknown> = {
 	env: T
 	debug?: boolean
+	/**
+	 * Milliseconds to wait for a response before the call rejects with
+	 * `RPCErrors.TIMEOUT`. `0` disables the timeout.
+	 *
+	 * @defaultValue 5000
+	 */
+	timeout?: number
 }
 
 /** **Internal** */
@@ -85,6 +92,7 @@ export enum RPCErrors {
 	NO_PLAYER = 'No player (failed to resolve from local index)',
 	UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
 	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
+	TIMEOUT = 'Timed out waiting for response',
 }
 
 /**

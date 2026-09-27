@@ -20,19 +20,13 @@ import { Wrapper } from './wrapper'
 
 export class RPCInstanceClient extends Wrapper {
 	private readonly _emitterServer: Emitter
-	private readonly _pendingServer: Emitter
 	private readonly _emitterWeb: Emitter
-	private readonly _pendingWeb: Emitter
-	private readonly _pendingWebToServer: Emitter
 
 	constructor(props: RPCConfig<'client'>) {
 		super(props)
 
 		this._emitterServer = new Emitter()
-		this._pendingServer = new Emitter()
 		this._emitterWeb = new Emitter()
-		this._pendingWeb = new Emitter()
-		this._pendingWebToServer = new Emitter()
 
 		this.console.log('[RPC] Initialized Client')
 
@@ -93,17 +87,8 @@ export class RPCInstanceClient extends Wrapper {
 			}
 		}
 		if (payload.type === 'response') {
-			if (payload.calledTo === 'client') {
-				await this._pendingServer.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
-			}
-			if (payload.calledTo === 'webview') {
-				await this._pendingWebToServer.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
+			if (payload.calledTo === 'client' || payload.calledTo === 'webview') {
+				this.resolvePending(payload)
 			}
 		}
 	}
@@ -126,18 +111,13 @@ export class RPCInstanceClient extends Wrapper {
 				payload.player = GetPlayerServerId(PlayerId())
 				emitNet(RPCEvents.LISTENER_WEB, stringify(payload))
 
-				return new Promise(res => {
-					this._pendingWebToServer.once(payload.uuid, res)
-				})
+				return this._pending.wait(payload.uuid)
 			}
 		}
 
 		if (payload.type === 'response') {
 			if (payload.calledTo === 'client') {
-				await this._pendingWeb.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
+				this.resolvePending(payload)
 
 				return { status: 'ok' }
 			}
@@ -202,9 +182,7 @@ export class RPCInstanceClient extends Wrapper {
 
 		emitNet(RPCEvents.LISTENER_CLIENT, stringify(payload))
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingServer.once(payload.uuid, res)
-		})
+		return this._pending.wait<Awaited<Response>>(payload.uuid)
 	}
 
 	// ===== WEBVIEW =====
@@ -261,9 +239,7 @@ export class RPCInstanceClient extends Wrapper {
 			data: payload,
 		})
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingWeb.once(payload.uuid, res)
-		})
+		return this._pending.wait<Awaited<Response>>(payload.uuid)
 	}
 
 	// ===== SELF =====
