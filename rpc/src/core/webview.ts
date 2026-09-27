@@ -11,12 +11,6 @@ import {
 } from '../utils/types'
 import { Wrapper } from './wrapper'
 
-declare global {
-	interface Window {
-		GetParentResourceName?: () => string
-	}
-}
-
 export class RPCInstanceWebview extends Wrapper {
 	private readonly _emitterClient: Emitter
 	private readonly _emitterServer: Emitter

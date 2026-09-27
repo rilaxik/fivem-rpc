@@ -13,15 +13,6 @@ import {
 } from '../utils/types'
 import { Wrapper } from './wrapper'
 
-declare function onNet(eventName: string, callback: Function): void
-declare function emitNet(eventName: string, ...args: unknown[]): void
-declare function on(eventName: string, callback: Function): void
-declare function RegisterCommand(
-	commandName: string,
-	handler: Function,
-	restricted: boolean,
-): void
-
 export class RPCInstanceServer extends Wrapper {
 	private readonly _emitterClient: Emitter
 	private readonly _pendingClient: Emitter
