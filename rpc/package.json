@@ -24,7 +24,8 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/rilaxik/fivem-rpc.git"
+		"url": "https://github.com/rilaxik/fivem-rpc.git",
+		"directory": "rpc"
 	},
 	"files": [
 		"dist/**/*",

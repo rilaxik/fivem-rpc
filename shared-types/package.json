@@ -8,18 +8,24 @@
 		"fivem-rpc-shared-types",
 		"gta"
 	],
-	"license": "Custom-Attribution-NoDerivs",
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
 			"name": "Danya H",
 			"email": "dev.rilaxik@gmail.com",
 			"url": "https://github.com/rilaxik/"
+		},
+		{
+			"name": "Oleksandr Honcharov",
+			"email": "0976053529@ukr.net",
+			"url": "https://github.com/SashaGoncharov19/"
 		}
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/rilaxik/fivem-rpc.git"
+		"url": "https://github.com/rilaxik/fivem-rpc.git",
+		"directory": "shared-types"
 	},
 	"files": [
 		"types/**/*",
@@ -30,5 +36,10 @@
 	"types": "types/types/index.d.ts",
 	"peerDependencies": {
 		"typescript": ">=5"
+	},
+	"peerDependenciesMeta": {
+		"typescript": {
+			"optional": true
+		}
 	}
 }
