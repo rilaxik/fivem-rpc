@@ -23,23 +23,30 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 
 		console.log('[RPC] Initialized Webview')
 
-		window.addEventListener('message', (e: MessageEvent<RPCStateWeb>) => {
-			if (e.data.origin === RPCEvents.LISTENER_CLIENT) {
-				this._handleClient(e.data.data)
-			}
-			if (e.data.origin === RPCEvents.LISTENER_SERVER) {
-				this._handleServer(e.data.data)
-			}
-		})
+		window.addEventListener(
+			'message',
+			(e: MessageEvent<Partial<RPCStateWeb> | null>) => {
+				const origin = e.data?.origin
+				// not ours, e.g. the resource's own SendNUIMessage calls
+				if (
+					origin !== RPCEvents.LISTENER_CLIENT &&
+					origin !== RPCEvents.LISTENER_SERVER
+				) {
+					return
+				}
+
+				const payload = this.accept(e.data?.data)
+				if (!payload) return
+
+				if (origin === RPCEvents.LISTENER_CLIENT) this._handleClient(payload)
+				else this._handleServer(payload)
+			},
+		)
 	}
 
 	// ===== HANDLERS =====
 
 	private async _handleClient(payload: RPCState) {
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
-
 		if (payload.calledFrom === 'client' && payload.type === 'event') {
 			const response = await this.dispatch(this._emitterClient, payload)
 
@@ -48,10 +55,6 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 	}
 
 	private async _handleServer(payload: RPCState) {
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
-
 		if (payload.calledFrom === 'server' && payload.type === 'event') {
 			const response = await this.dispatch(this._emitterServer, payload)
 
@@ -156,7 +159,10 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 	private _request<R>(payload: RPCState): Promise<R> {
 		const response = this._pending.wait<R>(payload)
 		this._createHttpClientRequest<RPCState>(payload).then(
-			res => this.settle(res),
+			res => {
+				const reply = this.accept(res)
+				if (reply) this.settle(reply)
+			},
 			(error: Error) => this._pending.reject(payload.uuid, error),
 		)
 		return response

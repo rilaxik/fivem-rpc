@@ -1,17 +1,48 @@
 import type {
+	RPCEnvironment,
 	RPCState,
 	RPCStateRaw,
 	RPCStateWeb,
 	RPCStateWebRaw,
 } from './types'
 
+const ENVIRONMENTS: readonly unknown[] = [
+	'server',
+	'client',
+	'webview',
+] satisfies RPCEnvironment[]
+
 /**
  * **Internal**
  *
- * Typed data parser
+ * Checks the shape of an incoming payload. Payloads come from the network or
+ * another runtime, so nothing about them is trusted.
  */
-export function parse(data: RPCStateRaw): RPCState {
-	return JSON.parse(data)
+export function isRPCState(value: unknown): value is RPCState {
+	if (typeof value !== 'object' || value === null) return false
+	const v = value as Record<string, unknown>
+	return (
+		typeof v.event === 'string' &&
+		typeof v.uuid === 'string' &&
+		(v.type === 'event' || v.type === 'response') &&
+		ENVIRONMENTS.includes(v.calledFrom) &&
+		ENVIRONMENTS.includes(v.calledTo) &&
+		(v.data === null || Array.isArray(v.data))
+	)
+}
+
+/**
+ * **Internal**
+ *
+ * Parses a raw payload, `null` if it is not JSON or not an RPC payload
+ */
+export function parse(data: RPCStateRaw): RPCState | null {
+	try {
+		const value: unknown = JSON.parse(data)
+		return isRPCState(value) ? value : null
+	} catch {
+		return null
+	}
 }
 
 /**

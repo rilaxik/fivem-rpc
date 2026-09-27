@@ -2,7 +2,7 @@ import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
 import { RPCError } from '../utils/errors'
-import { parse, stringify } from '../utils/funcs'
+import { stringify } from '../utils/funcs'
 import { NATIVE_SERVER_EVENTS } from '../utils/native'
 import {
 	type RPCConfig,
@@ -32,16 +32,8 @@ export class RPCInstanceServer extends RPCInstanceBase {
 	// ===== HANDLERS =====
 
 	private async _handleClient(payloadRaw: RPCStateRaw) {
-		try {
-			parse(payloadRaw)
-		} catch {
-			throw new RPCError(RPCErrors.INVALID_DATA, RPCErrors.INVALID_DATA)
-		}
-		const payload = parse(payloadRaw)
-
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
+		const payload = this.accept(payloadRaw)
+		if (!payload) return
 
 		if (payload.calledFrom === 'client') {
 			if (payload.type === 'event') {
@@ -71,16 +63,8 @@ export class RPCInstanceServer extends RPCInstanceBase {
 	}
 
 	private async _handleWeb(payloadRaw: RPCStateRaw) {
-		try {
-			parse(payloadRaw)
-		} catch {
-			throw new RPCError(RPCErrors.INVALID_DATA, RPCErrors.INVALID_DATA)
-		}
-		const payload = parse(payloadRaw)
-
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
+		const payload = this.accept(payloadRaw)
+		if (!payload) return
 
 		if (payload.calledFrom === 'webview') {
 			if (payload.type === 'event') {

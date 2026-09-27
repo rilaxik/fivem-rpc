@@ -2,7 +2,7 @@ import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
 import { RPCError } from '../utils/errors'
-import { parse, stringify, stringifyWeb } from '../utils/funcs'
+import { stringify, stringifyWeb } from '../utils/funcs'
 import {
 	NATIVE_CLIENT_EVENTS,
 	NATIVE_CLIENT_NETWORK_EVENTS,
@@ -35,11 +35,14 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		RegisterNuiCallbackType(RPCEvents.LISTENER_WEB)
 		on(
 			`__cfx_nui:${RPCEvents.LISTENER_WEB}`,
-			async (data: RPCState, callback: (res: unknown) => void) => {
+			async (data: unknown, callback: (res: unknown) => void) => {
+				const payload = this.accept(data)
+				if (!payload) return callback({ status: 'invalid' })
+
 				try {
-					callback(await this._handleWeb(data))
+					callback(await this._handleWeb(payload))
 				} catch (e) {
-					callback(this.errorResponse(data, e))
+					callback(this.errorResponse(payload, e))
 				}
 			},
 		)
@@ -48,16 +51,8 @@ export class RPCInstanceClient extends RPCInstanceBase {
 	// ===== HANDLERS =====
 
 	private async _handleServer(payloadRaw: RPCStateRaw) {
-		try {
-			parse(payloadRaw)
-		} catch {
-			throw new RPCError(RPCErrors.INVALID_DATA, RPCErrors.INVALID_DATA)
-		}
-		const payload = parse(payloadRaw)
-
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
+		const payload = this.accept(payloadRaw)
+		if (!payload) return
 
 		if (payload.type === 'event') {
 			if (payload.calledTo === 'client') {
@@ -86,10 +81,6 @@ export class RPCInstanceClient extends RPCInstanceBase {
 	}
 
 	private async _handleWeb(payload: RPCState): Promise<unknown> {
-		this.log(
-			`accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-		)
-
 		if (payload.type === 'event') {
 			if (payload.calledTo === 'client') {
 				return this.dispatch(this._emitterWeb, payload)

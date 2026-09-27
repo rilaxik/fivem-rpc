@@ -13,7 +13,6 @@ import {
 	type RPCState,
 } from '../utils/types'
 
-/** Shared plumbing of the server, client and webview instances */
 export class RPCInstanceBase {
 	protected readonly env: RPCEnvironment
 	protected readonly debug: boolean
@@ -26,9 +25,7 @@ export class RPCInstanceBase {
 		this._pending = new Pending(cfg.timeout ?? 5000)
 	}
 
-	// ===== LISTENERS =====
-
-	/** Registers `cb` for `event` on `emitter`; `method` is only used for logs */
+	/** Registers `cb` for `event` on `emitter`; `method` is only for logs */
 	protected listen(
 		emitter: Emitter,
 		method: string,
@@ -39,14 +36,13 @@ export class RPCInstanceBase {
 		emitter.on(event, cb)
 		return this
 	}
-
+	
+	/** Unregisters `cb` for `event` on `emitter`; `method` is only for logs */
 	protected unlisten(emitter: Emitter, method: string, event: string): this {
 		this.log(`${method} ${event}`)
 		emitter.off(event)
 		return this
 	}
-
-	// ===== OUTGOING =====
 
 	/** Builds an event payload sent from this environment to `to` */
 	protected request(
@@ -88,8 +84,6 @@ export class RPCInstanceBase {
 
 		if (!found) this.logIgnored(response)
 	}
-
-	// ===== INCOMING =====
 
 	/**
 	 * Runs the listener for `request` and builds the response to send back.
@@ -146,8 +140,6 @@ export class RPCInstanceBase {
 			message: rpcError.message,
 		})
 	}
-
-	// ===== LOGS =====
 
 	/** Debug-only log, prefixed with the environment */
 	protected log(message: string): void {

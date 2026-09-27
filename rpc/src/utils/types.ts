@@ -94,7 +94,6 @@ export enum RPCEvents {
  */
 export enum RPCErrors {
 	EVENT_NOT_REGISTERED = 'Event not registered',
-	INVALID_DATA = 'Invalid data (possibly broken JSON)',
 	NO_PLAYER = 'No player (failed to resolve from local index)',
 	UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
 	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
