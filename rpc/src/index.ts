@@ -2,6 +2,7 @@ import { RPCInstanceClient } from './core/client'
 import { RPCInstanceServer } from './core/server'
 import { RPCInstanceWebview } from './core/webview'
 import { Wrapper } from './core/wrapper'
+import { RPCError } from './utils/errors'
 import {
 	type RPCConfig,
 	type RPCEnvironment,
@@ -54,7 +55,10 @@ class RPCFactory<T extends RPCEnvironment> extends Wrapper {
 				this.operator = new RPCInstanceWebview(opts as RPCConfig<'webview'>)
 				break
 			default:
-				throw new Error(RPCErrors.UNKNOWN_ENVIRONMENT)
+				throw new RPCError(
+					RPCErrors.UNKNOWN_ENVIRONMENT,
+					RPCErrors.UNKNOWN_ENVIRONMENT,
+				)
 		}
 	}
 
@@ -65,6 +69,7 @@ class RPCFactory<T extends RPCEnvironment> extends Wrapper {
 
 export { RPCFactory }
 export * from './utils/types'
+export { RPCError, type RPCErrorDetails } from './utils/errors'
 export * from './utils/native'
 export type * from './core/server'
 export type * from './core/client'

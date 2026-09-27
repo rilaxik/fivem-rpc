@@ -1,4 +1,5 @@
-import { RPCErrors } from './types'
+import { RPCError, timeoutMessage } from './errors'
+import { RPCErrors, type RPCState } from './types'
 
 type Call = {
 	resolve: (data: unknown) => void
@@ -13,17 +14,18 @@ export class Pending {
 	/** @param timeout - ms before a call rejects, `0` or less disables it */
 	constructor(private readonly _timeout: number) {}
 
-	public wait<R>(uuid: string): Promise<R> {
+	/** Waits for the response to `request`, rejects with `RPCErrors.TIMEOUT` */
+	public wait<R>(request: RPCState): Promise<R> {
 		return new Promise<R>((resolve, reject) => {
 			const timer =
 				this._timeout > 0
 					? setTimeout(
-							() => this.reject(uuid, new Error(RPCErrors.TIMEOUT)),
+							() => this.reject(request.uuid, this._timeoutError(request)),
 							this._timeout,
 						)
 					: undefined
 
-			this._calls.set(uuid, {
+			this._calls.set(request.uuid, {
 				resolve: resolve as (data: unknown) => void,
 				reject,
 				timer,
@@ -52,5 +54,23 @@ export class Pending {
 			clearTimeout(call.timer)
 		}
 		return call
+	}
+
+	private _timeoutError(request: RPCState): RPCError {
+		return new RPCError(
+			RPCErrors.TIMEOUT,
+			timeoutMessage(
+				request.event,
+				request.calledTo,
+				request.calledFrom,
+				this._timeout,
+			),
+			{
+				event: request.event,
+				uuid: request.uuid,
+				from: request.calledFrom,
+				to: request.calledTo,
+			},
+		)
 	}
 }

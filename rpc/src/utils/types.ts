@@ -46,10 +46,16 @@ export type RPCState = {
 	uuid: string
 	calledFrom: RPCEnvironment
 	calledTo: RPCEnvironment
-	error: string | null
+	error: RPCErrorPayload | null
 	data: unknown[] | null
 	player: number | null
 	type: RPCEventType
+}
+
+/** **Internal** Error sent back in a response, rebuilt as `RPCError` by the caller */
+export type RPCErrorPayload = {
+	code: RPCErrors
+	message: string
 }
 
 /**
@@ -93,6 +99,7 @@ export enum RPCErrors {
 	UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
 	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
 	TIMEOUT = 'Timed out waiting for response',
+	HANDLER_ERROR = 'Listener threw an error',
 }
 
 /**

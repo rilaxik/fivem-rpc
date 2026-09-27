@@ -43,25 +43,9 @@ export class RPCInstanceWebview extends Wrapper {
 		}
 
 		if (payload.calledFrom === 'client' && payload.type === 'event') {
-			this.verifyEvent(this._emitterClient, payload)
+			const response = await this.dispatch(this._emitterClient, payload)
 
-			const responseData = await this._emitterClient.emit(
-				payload.event,
-				...(payload.data && payload.data.length > 0 ? payload.data : []),
-			)
-
-			const response: RPCState = {
-				event: payload.event,
-				uuid: payload.uuid,
-				calledFrom: 'webview',
-				calledTo: 'client',
-				error: null,
-				data: [responseData],
-				player: payload.player,
-				type: 'response',
-			}
-
-			await this._createHttpClientRequest(response).then()
+			await this._createHttpClientRequest(response)
 		}
 	}
 
@@ -73,23 +57,7 @@ export class RPCInstanceWebview extends Wrapper {
 		}
 
 		if (payload.calledFrom === 'server' && payload.type === 'event') {
-			this.verifyEvent(this._emitterServer, payload)
-
-			const responseData = await this._emitterServer.emit(
-				payload.event,
-				...(payload.data && payload.data.length > 0 ? payload.data : []),
-			)
-
-			const response: RPCState = {
-				event: payload.event,
-				uuid: payload.uuid,
-				calledFrom: 'webview',
-				calledTo: 'server',
-				error: null,
-				data: [responseData],
-				player: payload.player,
-				type: 'response',
-			}
+			const response = await this.dispatch(this._emitterServer, payload)
 
 			await this._createHttpClientRequest(response)
 		}
@@ -254,7 +222,7 @@ export class RPCInstanceWebview extends Wrapper {
 			)
 		}
 
-		this.verifyEvent(this._emitterLocal, payload)
+		this.assertListener(this._emitterLocal, payload.event)
 
 		return await this._emitterLocal.emit<Awaited<Response>>(
 			payload.event,
@@ -266,9 +234,9 @@ export class RPCInstanceWebview extends Wrapper {
 
 	/** Sends an event to the client and waits for its response (with timeout) */
 	private _request<R>(payload: RPCState): Promise<R> {
-		const response = this._pending.wait<R>(payload.uuid)
-		this._createHttpClientRequest(payload).then(
-			data => this._pending.resolve(payload.uuid, data),
+		const response = this._pending.wait<R>(payload)
+		this._createHttpClientRequest<RPCState>(payload).then(
+			res => this.settle(res),
 			(error: Error) => this._pending.reject(payload.uuid, error),
 		)
 		return response

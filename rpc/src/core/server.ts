@@ -1,6 +1,7 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
 
 import { Emitter } from '../utils/emitter'
+import { RPCError } from '../utils/errors'
 import { generateUUID, parse, stringify } from '../utils/funcs'
 import { NATIVE_SERVER_EVENTS } from '../utils/native'
 import {
@@ -35,7 +36,7 @@ export class RPCInstanceServer extends Wrapper {
 		try {
 			parse(payloadRaw)
 		} catch {
-			throw new Error(RPCErrors.INVALID_DATA)
+			throw new RPCError(RPCErrors.INVALID_DATA, RPCErrors.INVALID_DATA)
 		}
 		const payload = parse(payloadRaw)
 
@@ -47,34 +48,27 @@ export class RPCInstanceServer extends Wrapper {
 
 		if (payload.calledFrom === 'client') {
 			if (payload.type === 'event') {
-				this.verifyEvent(this._emitterClient, payload)
 				if (payload.player === null || payload.player === -1) {
-					payload.error = RPCErrors.NO_PLAYER
-					this.triggerError(payload)
+					// nobody to reply to, the caller times out
+					this.console.error(
+						new RPCError(
+							RPCErrors.NO_PLAYER,
+							`${RPCErrors.NO_PLAYER}: "${payload.event}" from ${payload.calledFrom}`,
+						),
+					)
 					return
 				}
 
-				const responseData = await this._emitterClient.emit(
-					payload.event,
+				const response = await this.dispatch(
+					this._emitterClient,
+					payload,
 					payload.player,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
 				)
-
-				const response: RPCState = {
-					event: payload.event,
-					uuid: payload.uuid,
-					calledFrom: 'server',
-					calledTo: 'client',
-					error: null,
-					data: [responseData],
-					player: payload.player,
-					type: 'response',
-				}
 
 				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
 			}
 			if (payload.type === 'response') {
-				this.resolvePending(payload)
+				this.settle(payload)
 			}
 		}
 	}
@@ -83,7 +77,7 @@ export class RPCInstanceServer extends Wrapper {
 		try {
 			parse(payloadRaw)
 		} catch {
-			throw new Error(RPCErrors.INVALID_DATA)
+			throw new RPCError(RPCErrors.INVALID_DATA, RPCErrors.INVALID_DATA)
 		}
 		const payload = parse(payloadRaw)
 
@@ -95,34 +89,27 @@ export class RPCInstanceServer extends Wrapper {
 
 		if (payload.calledFrom === 'webview') {
 			if (payload.type === 'event') {
-				this.verifyEvent(this._emitterWeb, payload)
 				if (payload.player === null || payload.player === -1) {
-					payload.error = RPCErrors.NO_PLAYER
-					this.triggerError(payload)
+					// nobody to reply to, the caller times out
+					this.console.error(
+						new RPCError(
+							RPCErrors.NO_PLAYER,
+							`${RPCErrors.NO_PLAYER}: "${payload.event}" from ${payload.calledFrom}`,
+						),
+					)
 					return
 				}
 
-				const responseData = await this._emitterWeb.emit(
-					payload.event,
+				const response = await this.dispatch(
+					this._emitterWeb,
+					payload,
 					payload.player,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
 				)
-
-				const response: RPCState = {
-					event: payload.event,
-					uuid: payload.uuid,
-					calledFrom: 'server',
-					calledTo: 'webview',
-					error: null,
-					data: [responseData],
-					player: payload.player,
-					type: 'response',
-				}
 
 				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
 			}
 			if (payload.type === 'response') {
-				this.resolvePending(payload)
+				this.settle(payload)
 			}
 		}
 	}
@@ -183,7 +170,7 @@ export class RPCInstanceServer extends Wrapper {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload.uuid)
+		return this._pending.wait<Awaited<Response>>(payload)
 	}
 
 	public async emitClientEveryone<
@@ -260,7 +247,7 @@ export class RPCInstanceServer extends Wrapper {
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return this._pending.wait<Awaited<Response>>(payload.uuid)
+		return this._pending.wait<Awaited<Response>>(payload)
 	}
 
 	// ===== SELF =====
@@ -318,7 +305,7 @@ export class RPCInstanceServer extends Wrapper {
 			)
 		}
 
-		this.verifyEvent(this._emitterLocal, payload)
+		this.assertListener(this._emitterLocal, payload.event)
 
 		return await this._emitterLocal.emit<Awaited<Response>>(
 			payload.event,
@@ -350,7 +337,7 @@ export class RPCInstanceServer extends Wrapper {
 		CallbackArguments extends Parameters<RPCNativeServerEvents[EventName]>,
 	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
 		if (!NATIVE_SERVER_EVENTS.includes(eventName)) {
-			throw new Error(RPCErrors.UNKNOWN_NATIVE)
+			throw new RPCError(RPCErrors.UNKNOWN_NATIVE, RPCErrors.UNKNOWN_NATIVE)
 		}
 
 		if (this.debug) {
