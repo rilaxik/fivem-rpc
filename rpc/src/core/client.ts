@@ -54,11 +54,18 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		const payload = this.accept(payloadRaw)
 		if (!payload) return
 
-		if (payload.type === 'event') {
+		if (payload.type === 'event' || payload.type === 'broadcast') {
 			if (payload.calledTo === 'client') {
 				const response = await this.dispatch(this._emitterServer, payload)
 
-				emitNet(RPCEvents.LISTENER_CLIENT, stringify(response))
+				if (payload.type === 'event') {
+					emitNet(RPCEvents.LISTENER_CLIENT, stringify(response))
+				} else if (response.error) {
+					// nobody waits for a broadcast, so its failures only show up here
+					this.log(
+						`broadcast ${payload.event} failed: ${response.error.message}`,
+					)
+				}
 			}
 			if (payload.calledTo === 'webview') {
 				this._sendWebMessage({

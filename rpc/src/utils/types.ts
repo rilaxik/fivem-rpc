@@ -33,8 +33,14 @@ export type RPCConfig<T extends RPCEnvironment | unknown> = {
 	timeout?: number
 }
 
-/** **Internal** */
-export type RPCEventType = 'event' | 'response'
+/**
+ * **Internal**
+ *
+ * - `event`: call that expects a `response`
+ * - `response`: answer to an `event`
+ * - `broadcast`: one-way event, receivers do not reply
+ */
+export type RPCEventType = 'event' | 'response' | 'broadcast'
 
 /**
  * **Internal**

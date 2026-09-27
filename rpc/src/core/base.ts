@@ -51,6 +51,7 @@ export class RPCInstanceBase {
 		to: RPCEnvironment,
 		args: unknown[],
 		player: number | null,
+		type: 'event' | 'broadcast' = 'event',
 	): RPCState {
 		return {
 			event,
@@ -60,7 +61,7 @@ export class RPCInstanceBase {
 			error: null,
 			data: args,
 			player,
-			type: 'event',
+			type,
 		}
 	}
 

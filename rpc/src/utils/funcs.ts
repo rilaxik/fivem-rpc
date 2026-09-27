@@ -24,7 +24,7 @@ export function isRPCState(value: unknown): value is RPCState {
 	return (
 		typeof v.event === 'string' &&
 		typeof v.uuid === 'string' &&
-		(v.type === 'event' || v.type === 'response') &&
+		(v.type === 'event' || v.type === 'response' || v.type === 'broadcast') &&
 		ENVIRONMENTS.includes(v.calledFrom) &&
 		ENVIRONMENTS.includes(v.calledTo) &&
 		(v.data === null || Array.isArray(v.data))

@@ -61,7 +61,7 @@ export class RPCInstanceServer extends RPCInstanceBase {
 		if (payload.type === 'event') {
 			const response = await this.dispatch(emitter, payload, player)
 			emitNet(RPCEvents.LISTENER_SERVER, player, stringify(response))
-		} else {
+		} else if (payload.type === 'response') {
 			this.settle(payload, player)
 		}
 	}
@@ -108,7 +108,7 @@ export class RPCInstanceServer extends RPCInstanceBase {
 		EventName extends keyof s.RPCEvents_ServerClient,
 		Arguments extends Parameters<s.RPCEvents_ServerClient[EventName]>,
 	>(eventName: EventName, ...args: Arguments): Promise<void> {
-		const payload = this.request(eventName, 'client', args, -1)
+		const payload = this.request(eventName, 'client', args, -1, 'broadcast')
 
 		emitNet(RPCEvents.LISTENER_SERVER, -1, stringify(payload))
 	}
