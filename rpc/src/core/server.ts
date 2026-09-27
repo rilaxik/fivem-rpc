@@ -47,7 +47,7 @@ export class RPCInstanceServer extends Wrapper {
 	private async _handleClient(payloadRaw: RPCStateRaw) {
 		try {
 			parse(payloadRaw)
-		} catch (e) {
+		} catch {
 			throw new Error(RPCErrors.INVALID_DATA)
 		}
 		const payload = parse(payloadRaw)
@@ -98,7 +98,7 @@ export class RPCInstanceServer extends Wrapper {
 	private async _handleWeb(payloadRaw: RPCStateRaw) {
 		try {
 			parse(payloadRaw)
-		} catch (e) {
+		} catch {
 			throw new Error(RPCErrors.INVALID_DATA)
 		}
 		const payload = parse(payloadRaw)
