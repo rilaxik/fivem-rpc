@@ -54,15 +54,11 @@ export function stringify(data: RPCState): RPCStateRaw {
 	return JSON.stringify(data) as RPCStateRaw
 }
 
-// automatically parsed by FiveM
-// export function parseWeb(data: RPCStateWebRaw): RPCStateWeb {
-//     return JSON.parse(data)
-// }
-
 /**
  * **Internal**
  *
- * Typed data serializer
+ * Typed data serializer. No parse counterpart: the webview receives NUI
+ * messages already parsed by FiveM.
  */
 export function stringifyWeb(data: RPCStateWeb): RPCStateWebRaw {
 	return JSON.stringify(data) as RPCStateWebRaw
