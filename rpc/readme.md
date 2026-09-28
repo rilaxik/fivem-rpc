@@ -57,6 +57,25 @@ try {
 
 ## How it works
 
+### Directions
+
+Every call goes from an `emit*` method in one environment to the matching `on*` listener in another. The last column is the [shared-types](../shared-types/readme.md) interface that types it
+
+| From    | Call                                  | To          | Listener                              | Typed by                  |
+| ------- | ------------------------------------- | ----------- | ------------------------------------- | ------------------------- |
+| server  | `emitClient(player, event, ...args)`  | client      | `onServer`                            | `RPCEvents_ServerClient`  |
+| server  | `emitClientEveryone(event, ...args)`  | all clients | `onServer`, no response               | `RPCEvents_ServerClient`  |
+| server  | `emitWebview(player, event, ...args)` | webview     | `onServer`, via client                | `RPCEvents_ServerWebview` |
+| server  | `emitSelf(event, ...args)`            | server      | `onSelf`                              | `RPCEvents_Server`        |
+| client  | `emitServer(event, ...args)`          | server      | `onClient`, player first              | `RPCEvents_ClientServer`  |
+| client  | `emitWebview(event, ...args)`         | webview     | `onClient`                            | `RPCEvents_ClientWebview` |
+| client  | `emitSelf(event, ...args)`            | client      | `onSelf`                              | `RPCEvents_Client`        |
+| webview | `emitServer(event, ...args)`          | server      | `onWebview`, player first, via client | `RPCEvents_WebviewServer` |
+| webview | `emitClient(event, ...args)`          | client      | `onWebview`                           | `RPCEvents_WebviewClient` |
+| webview | `emitSelf(event, ...args)`            | webview     | `onSelf`                              | `RPCEvents_Webview`       |
+
+Commands registered with `onCommand` are typed by `RPCCommands_Server` and `RPCCommands_Client`
+
 ### Routing
 
 Server and client talk over FiveM network events, client and webview over NUI messages and NUI callbacks. Webview and server never talk directly: every call between them is relayed by the client of that player. So every client must run `createRPC({ env: 'client' })`, even with no listeners of its own, or those calls time out

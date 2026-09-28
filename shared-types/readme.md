@@ -51,21 +51,7 @@ See the [main readme](../readme.md#installation). The declaration file below imp
 
 ## Interfaces
 
-Each interface is one direction. An interface you leave empty stays loose (any name, arguments and result), so you can declare them one at a time
-
-| Interface                 | Direction          | Caller                                      | Listener             |
-| ------------------------- | ------------------ | ------------------------------------------- | -------------------- |
-| `RPCEvents_Client`        | client -> client   | `emitSelf` (client)                         | `onSelf` (client)    |
-| `RPCEvents_ClientServer`  | client -> server   | `emitServer` (client)                       | `onClient` (server)  |
-| `RPCEvents_ClientWebview` | client -> webview  | `emitWebview` (client)                      | `onClient` (webview) |
-| `RPCEvents_Server`        | server -> server   | `emitSelf` (server)                         | `onSelf` (server)    |
-| `RPCEvents_ServerClient`  | server -> client   | `emitClient`, `emitClientEveryone` (server) | `onServer` (client)  |
-| `RPCEvents_ServerWebview` | server -> webview  | `emitWebview` (server)                      | `onServer` (webview) |
-| `RPCEvents_Webview`       | webview -> webview | `emitSelf` (webview)                        | `onSelf` (webview)   |
-| `RPCEvents_WebviewClient` | webview -> client  | `emitClient` (webview)                      | `onWebview` (client) |
-| `RPCEvents_WebviewServer` | webview -> server  | `emitServer` (webview)                      | `onWebview` (server) |
-| `RPCCommands_Client`      | -                  | -                                           | `onCommand` (client) |
-| `RPCCommands_Server`      | -                  | -                                           | `onCommand` (server) |
+Each interface types one direction, see the [direction table](../rpc/readme.md#directions) for which `emit*` and `on*` methods use it. `RPCCommands_Server` and `RPCCommands_Client` type `onCommand`. An interface you leave empty stays loose (any name, arguments and result), so you can declare them one at a time
 
 - events: the member name is the event name, its parameters are the arguments, its return type is what `emit*` resolves with. Server `onClient` and `onWebview` listeners get the player id before the declared arguments. Names that are not identifiers work too: `'buy-item'(item: string): boolean`
 - commands: the key is the command name, the value is not used (`true`)
