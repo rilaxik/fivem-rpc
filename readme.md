@@ -2,37 +2,64 @@
 
 is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS
 
+## Motivation
+
+The idea was to create an extensible package, with various features to simplify the development process and provide as much comfort as possible. Inspired by usage of [altv-xrpc](https://github.com/xxshady/altv-xrpc)
+
+## Packages
+
+| Package                                               | Docs                                   |
+| ----------------------------------------------------- | -------------------------------------- |
+| [`@entityseven/fivem-rpc`](rpc)                       | [API reference](rpc/readme.md)         |
+| [`@entityseven/fivem-rpc-shared-types`](shared-types) | [Typing setup](shared-types/readme.md) |
+
 ## Installation
 
 ```bash
-  pnpm i @entityseven/fivem-rpc
+npm i @entityseven/fivem-rpc
+pnpm add @entityseven/fivem-rpc
+yarn add @entityseven/fivem-rpc
+bun add @entityseven/fivem-rpc
 ```
+
+Optional, for typed event names, arguments and results ([typing setup](shared-types/readme.md)):
 
 ```bash
-  yarn add @entityseven/fivem-rpc
+npm i -D @entityseven/fivem-rpc-shared-types
+pnpm add -D @entityseven/fivem-rpc-shared-types
+yarn add -D @entityseven/fivem-rpc-shared-types
+bun add -d @entityseven/fivem-rpc-shared-types
 ```
 
-```bash
-  bun add @entityseven/fivem-rpc
+## Quick start
+
+Create exactly one instance per environment and import it from your own module, not from the library. The client needs one even if it only relays between server and webview.
+
+```ts
+// server/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'server' })
+
+// client/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'client' })
+
+// webview/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'webview' })
 ```
 
-It is highly recommended to also install additional package for enhanced typing
+Listen on one side, emit from the other and await the listener's return value:
 
-```bash
-  pnpm i @entityseven/fivem-rpc-shared-types -D
+```ts
+// server
+rpc.onClient('ping', (player, message) => `pong: ${message} (from ${player})`)
+
+// client
+const reply = await rpc.emitServer('ping', 'hello')
 ```
 
-```bash
-  yarn add @entityseven/fivem-rpc-shared-types --dev
-```
-
-```bash
-  bun add @entityseven/fivem-rpc-shared-types -d
-```
-
-## Docs
-
-Can be found in [/rpc/readme.md](https://github.com/rilaxik/fivem-rpc/blob/master/rpc/readme.md)
+All methods: [API reference](rpc/readme.md).
 
 ## Features
 

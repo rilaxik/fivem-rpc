@@ -1,20 +1,10 @@
 # FiveM RPC Shared Types
 
-### [Docs & Info](https://github.com/rilaxik/fivem-rpc/blob/master/readme.md)
+### [Docs & Info](../readme.md)
 
 ## Installation
 
-```bash
-  pnpm i @entityseven/fivem-rpc-shared-types -D
-```
-
-```bash
-  yarn add @entityseven/fivem-rpc-shared-types --dev
-```
-
-```bash
-  bun add @entityseven/fivem-rpc-shared-types -d
-```
+See the [main readme](../readme.md#installation).
 
 ## Usage
 

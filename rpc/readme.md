@@ -1,48 +1,8 @@
 # FiveM RPC
 
-is an all-in package with asynchronous RPC implementation for RageMP servers in JS/TS. [Extra info](https://github.com/rilaxik/fivem-rpc/blob/master/readme.md)
+is an all-in package with asynchronous RPC implementation for RageMP servers in JS/TS
 
-# Motivation
-
-The idea was to create an extensible package, with various features to simplify the development process and provide as much comfort as possible. Inspired by usage of [altv-xrpc](https://github.com/xxshady/altv-xrpc)
-
-# Installation
-
-```bash
-  pnpm i @entityseven/fivem-rpc
-```
-
-```bash
-  yarn add @entityseven/fivem-rpc
-```
-
-```bash
-  bun add @entityseven/fivem-rpc
-```
-
-It is highly recommended to also install additional package for enhanced typing
-
-```bash
-  pnpm i @entityseven/fivem-rpc-shared-types -D
-```
-
-```bash
-  yarn add @entityseven/fivem-rpc-shared-types --dev
-```
-
-```bash
-  bun add @entityseven/fivem-rpc-shared-types -d
-```
-
-## Usage
-
-FiveM RPC is meant to be a singletone per environment. This means you _must create only one_ `RPCFactory` per your server/client/web. This also enables modifying `const rpc` to your needs, adding new methods or variables by forcing you to import it from file instead of library reference
-
-```ts
-// lib/rpc.ts
-import { RPCFactory } from '@entityseven/fivem-rpc'
-export const rpc = new RPCFactory(/* options */).get()
-```
+Installation, quick start and package overview: [main readme](../readme.md). Typed events: [shared-types](../shared-types/readme.md).
 
 # Docs
 
@@ -91,7 +51,7 @@ Type: 'event'
 Data: [<data>]
 ```
 
-## Server ([source](https://github.com/rilaxik/fivem-rpc/blob/master/rpc/src/core/server.ts))
+## Server ([source](src/core/server.ts))
 
 ### onClient
 
@@ -205,7 +165,7 @@ rpc.onNativeEvent('playerJoining', (source, oldId) => {
 })
 ```
 
-## Client ([source](https://github.com/rilaxik/fivem-rpc/blob/master/rpc/src/core/client.ts))
+## Client ([source](src/core/client.ts))
 
 ### onServer
 
@@ -329,7 +289,7 @@ Sets or removes focus and cursor from own webview
 rpc.setWebviewFocus(true /* focus */, true /* show cursor */)
 ```
 
-## Webview ([source](https://github.com/rilaxik/fivem-rpc/blob/master/rpc/src/core/webview.ts))
+## Webview ([source](src/core/webview.ts))
 
 ### onClient
 
