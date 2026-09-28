@@ -55,6 +55,29 @@ try {
 }
 ```
 
+## How it works
+
+### Routing
+
+Server and client talk over FiveM network events, client and webview over NUI messages and NUI callbacks. Webview and server never talk directly: every call between them is relayed by the client of that player. So every client must run `createRPC({ env: 'client' })`, even with no listeners of its own, or those calls time out
+
+### One listener per event
+
+Each `on*` method keeps one listener per event name. Registering the same name again replaces the previous listener, `off*` removes it. Directions are separate: `onClient('x')` and `onWebview('x')` on the server do not replace each other
+
+### Responses, errors and timeouts
+
+- `emit*` resolves with the value the listener returns (promises are awaited)
+- no listener on the target: the call rejects with `RPCErrors.EVENT_NOT_REGISTERED`
+- the listener throws: the target logs the error with `console.error`, the call rejects with `RPCErrors.HANDLER_ERROR` and the original message
+- no response within `RPCConfig.timeout` (default 5000 ms): the call rejects with `RPCErrors.TIMEOUT` and a late response is ignored. `timeout: 0` waits forever
+- `emitSelf` calls the local listener directly, whatever it throws reaches the caller unchanged
+- `emitClientEveryone` does not wait for clients: it resolves once sent, failures stay on each client (`console.error` for a throwing listener, the rest with `debug: true`)
+
+### Player identity
+
+Server listeners (`onClient`, `onWebview`) get the calling player's server id as the first argument. It comes from FiveM's `source`, never from the payload, so a client cannot pose as another player. Use it instead of player ids passed as arguments. A response to `emitClient` or `emitWebview` is only accepted from the player it was sent to
+
 ## Server ([source](src/core/server.ts))
 
 ### onClient
