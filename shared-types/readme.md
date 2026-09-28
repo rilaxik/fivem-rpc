@@ -67,7 +67,7 @@ Each interface is one direction. An interface you leave empty stays loose (any n
 | `RPCCommands_Client`      | -                  | -                                           | `onCommand` (client) |
 | `RPCCommands_Server`      | -                  | -                                           | `onCommand` (server) |
 
-- events: the member name is the event name, its parameters are the arguments, its return type is what `emit*` resolves with. Server listeners get the player id before the declared arguments. Names that are not identifiers work too: `'buy-item'(item: string): boolean`
+- events: the member name is the event name, its parameters are the arguments, its return type is what `emit*` resolves with. Server `onClient` and `onWebview` listeners get the player id before the declared arguments. Names that are not identifiers work too: `'buy-item'(item: string): boolean`
 - commands: the key is the command name, the value is not used (`true`)
 
 ## License

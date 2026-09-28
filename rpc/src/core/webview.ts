@@ -16,6 +16,18 @@ import type {
 } from '../utils/typing'
 import { RPCInstanceBase } from './base'
 
+/**
+ * RPC instance for webview code, returned by `createRPC({ env: 'webview' })`.
+ * Create one per webview and import it from your own module.
+ *
+ * - `on*` registers the listener that answers calls from one direction. One
+ *   listener per event: registering the same name again replaces it, `off*`
+ *   removes it
+ * - `emit*` calls the listener on the target and resolves with its return
+ *   value, or rejects with {@link RPCError}
+ * - calls to and from the server are relayed by the player's client, which
+ *   must run `createRPC({ env: 'client' })`
+ */
 export class RPCInstanceWebview extends RPCInstanceBase {
 	private readonly _emitterClient: Emitter
 	private readonly _emitterServer: Emitter
@@ -69,6 +81,16 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 
 	// ===== CLIENT =====
 
+	/**
+	 * Listens for `emitWebview` calls from this player's client
+	 * (client -> webview).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onClient('openMenu', items => menu.open(items))
+	 */
 	public onClient<EventName extends RPCEventName<s.RPCEvents_ClientWebview>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_ClientWebview, EventName>,
@@ -76,12 +98,23 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 		return this.listen(this._emitterClient, 'onClient', eventName, cb)
 	}
 
+	/** Removes the `onClient` listener for `eventName` */
 	public offClient<EventName extends RPCEventName<s.RPCEvents_ClientWebview>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterClient, 'offClient', eventName)
 	}
 
+	/**
+	 * Calls the client's `onWebview` listener (webview -> client) and resolves
+	 * with its return value.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const position = await rpc.emitClient('getPosition')
+	 */
 	public async emitClient<
 		EventName extends RPCEventName<s.RPCEvents_WebviewClient>,
 	>(
@@ -95,6 +128,16 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 
 	// ===== SERVER =====
 
+	/**
+	 * Listens for `emitWebview` calls from the server (server -> webview,
+	 * relayed by the client).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onServer('confirmPurchase', item => window.confirm(`Buy ${item}?`))
+	 */
 	public onServer<EventName extends RPCEventName<s.RPCEvents_ServerWebview>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_ServerWebview, EventName>,
@@ -102,12 +145,24 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 		return this.listen(this._emitterServer, 'onServer', eventName, cb)
 	}
 
+	/** Removes the `onServer` listener for `eventName` */
 	public offServer<EventName extends RPCEventName<s.RPCEvents_ServerWebview>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterServer, 'offServer', eventName)
 	}
 
+	/**
+	 * Calls the server's `onWebview` listener (webview -> server, relayed by
+	 * the client) and resolves with its return value. The server listener gets
+	 * this player's id first.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const bought = await rpc.emitServer('buyItem', 'water')
+	 */
 	public async emitServer<
 		EventName extends RPCEventName<s.RPCEvents_WebviewServer>,
 	>(
@@ -121,6 +176,15 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 
 	// ===== SELF =====
 
+	/**
+	 * Listens for `emitSelf` calls in this environment (webview -> webview).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onSelf('add', (a, b) => a + b)
+	 */
 	public onSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_Webview, EventName>,
@@ -128,12 +192,23 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
+	/** Removes the `onSelf` listener for `eventName` */
 	public offSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
+	/**
+	 * Calls this environment's own `onSelf` listener directly and resolves with
+	 * its return value. No timeout; errors thrown by the listener reach the caller
+	 * unchanged.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` if no `onSelf` listener exists
+	 *
+	 * @example
+	 * const total = await rpc.emitSelf('add', 2, 3)
+	 */
 	public async emitSelf<EventName extends RPCEventName<s.RPCEvents_Webview>>(
 		eventName: EventName,
 		...args: RPCEventArgs<s.RPCEvents_Webview, EventName>

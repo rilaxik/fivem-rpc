@@ -14,6 +14,10 @@ import {
 	type RPCStateRaw,
 } from '../utils/types'
 
+/**
+ * **Internal** Shared by `RPCInstanceServer`, `RPCInstanceClient` and
+ * `RPCInstanceWebview`.
+ */
 export class RPCInstanceBase {
 	protected readonly env: RPCEnvironment
 	protected readonly debug: boolean

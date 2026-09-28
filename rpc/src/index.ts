@@ -12,7 +12,11 @@ import {
 /**
  * Creates the RPC instance for one environment. Create exactly one per
  * environment (server, client, webview) and export it from a local module.
+ * Every client needs one, even without listeners: it relays calls between
+ * its webview and the server.
  *
+ * @returns `RPCInstanceServer`, `RPCInstanceClient` or `RPCInstanceWebview`,
+ *   matching `config.env`
  * @throws {@link RPCError} `UNKNOWN_ENVIRONMENT` if `config.env` is not
  *   `'server'`, `'client'` or `'webview'`
  *

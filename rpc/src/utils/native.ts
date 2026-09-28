@@ -23,7 +23,10 @@ const serverEvents = {
 	weaponDamageEvent: true,
 } satisfies Record<keyof RPCNativeServerEvents, true>
 
-/** https://docs.fivem.net/docs/scripting-reference/events/server-events/ */
+/**
+ * Events `onNativeEvent` accepts on the server:
+ * https://docs.fivem.net/docs/scripting-reference/events/server-events/
+ */
 export const NATIVE_SERVER_EVENTS = Object.keys(
 	serverEvents,
 ) as readonly (keyof RPCNativeServerEvents)[]
@@ -41,12 +44,16 @@ const clientEvents = {
 	populationPedCreating: true,
 } satisfies Record<keyof RPCNativeClientEvents, true>
 
-/** https://docs.fivem.net/docs/scripting-reference/events/client-events/ */
+/**
+ * Events `onNativeEvent` accepts on the client:
+ * https://docs.fivem.net/docs/scripting-reference/events/client-events/
+ */
 export const NATIVE_CLIENT_EVENTS = Object.keys(
 	clientEvents,
 ) as readonly (keyof RPCNativeClientEvents)[]
 
 /**
+ * Events `onNativeNetworkEvent` accepts on the client:
  * https://docs.fivem.net/docs/game-references/game-events/
  *
  * Source of truth for `RPCNativeClientNetworkEventsNames`.

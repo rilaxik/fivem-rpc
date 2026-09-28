@@ -4,7 +4,8 @@ import type { RPCInstanceWebview } from '../core/webview'
 import type { NATIVE_CLIENT_NETWORK_EVENTS } from './native'
 
 /**
- * Possible environment states for `RPCConfig`
+ * Where an instance runs: `server` (server scripts), `client` (client
+ * scripts) or `webview` (NUI page)
  */
 export type RPCEnvironment = 'server' | 'client' | 'webview'
 
@@ -99,18 +100,22 @@ export enum RPCEvents {
 	LISTENER_WEB = '__rpc:listenerWeb',
 }
 
-/**
- * Errors to check against
- */
+/** Values of `RPCError.code` */
 export enum RPCErrors {
+	/** The target has no listener for the event (or `emitSelf` has no `onSelf`) */
 	EVENT_NOT_REGISTERED = 'Event not registered',
+	/** `onNative*` got an event that is not in its `NATIVE_*` list */
 	UNKNOWN_NATIVE = 'Unknown native event',
+	/** `createRPC` got an `env` other than server, client or webview */
 	UNKNOWN_ENVIRONMENT = 'Unknown environment',
+	/** No response within `RPCConfig.timeout` */
 	TIMEOUT = 'Timed out waiting for response',
+	/** The listener on the target threw; the message carries its error */
 	HANDLER_ERROR = 'Listener threw an error',
 }
 
 /**
+ * Native server events accepted by `onNativeEvent` on the server:
  * https://docs.fivem.net/docs/scripting-reference/events/server-events/
  */
 export type RPCNativeServerEvents = {
@@ -245,6 +250,7 @@ export type RPCNativeServerEvents = {
 }
 
 /**
+ * Native client events accepted by `onNativeEvent` on the client:
  * https://docs.fivem.net/docs/scripting-reference/events/client-events/
  */
 export type RPCNativeClientEvents = {
@@ -277,6 +283,7 @@ export type RPCNativeClientEvents = {
 	): void
 }
 
+/** Game events accepted by `onNativeNetworkEvent` on the client */
 export type RPCNativeClientNetworkEvents = {
 	[name in RPCNativeClientNetworkEventsNames]: (
 		entities: number[],
@@ -285,6 +292,9 @@ export type RPCNativeClientNetworkEvents = {
 	) => void
 }
 
-/** https://docs.fivem.net/docs/game-references/game-events/ */
+/**
+ * Names in `NATIVE_CLIENT_NETWORK_EVENTS`:
+ * https://docs.fivem.net/docs/game-references/game-events/
+ */
 export type RPCNativeClientNetworkEventsNames =
 	(typeof NATIVE_CLIENT_NETWORK_EVENTS)[number]

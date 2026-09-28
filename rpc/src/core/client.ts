@@ -26,6 +26,18 @@ import type {
 } from '../utils/typing'
 import { RPCInstanceBase } from './base'
 
+/**
+ * RPC instance for client code, returned by `createRPC({ env: 'client' })`.
+ * Create one per client and import it from your own module.
+ *
+ * - `on*` registers the listener that answers calls from one direction. One
+ *   listener per event: registering the same name again replaces it, `off*`
+ *   removes it
+ * - `emit*` calls the listener on the target and resolves with its return
+ *   value, or rejects with {@link RPCError}
+ * - also relays calls between its webview and the server, so every client
+ *   needs an instance even without listeners of its own
+ */
 export class RPCInstanceClient extends RPCInstanceBase {
 	private readonly _emitterServer: Emitter
 	private readonly _emitterWeb: Emitter
@@ -123,6 +135,16 @@ export class RPCInstanceClient extends RPCInstanceBase {
 
 	// ===== SERVER =====
 
+	/**
+	 * Listens for `emitClient` and `emitClientEveryone` calls from the server
+	 * (server -> client). For `emitClientEveryone` the return value is not sent.
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onServer('askTrade', offer => showTradeDialog(offer))
+	 */
 	public onServer<EventName extends RPCEventName<s.RPCEvents_ServerClient>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_ServerClient, EventName>,
@@ -130,12 +152,23 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this.listen(this._emitterServer, 'onServer', eventName, cb)
 	}
 
+	/** Removes the `onServer` listener for `eventName` */
 	public offServer<EventName extends RPCEventName<s.RPCEvents_ServerClient>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterServer, 'offServer', eventName)
 	}
 
+	/**
+	 * Calls the server's `onClient` listener (client -> server) and resolves
+	 * with its return value. The server listener gets this player's id first.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const money = await rpc.emitServer('getMoney', 'bank')
+	 */
 	public async emitServer<
 		EventName extends RPCEventName<s.RPCEvents_ClientServer>,
 	>(
@@ -151,6 +184,16 @@ export class RPCInstanceClient extends RPCInstanceBase {
 
 	// ===== WEBVIEW =====
 
+	/**
+	 * Listens for `emitClient` calls from this player's webview
+	 * (webview -> client).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onWebview('getPosition', () => GetEntityCoords(PlayerPedId(), false))
+	 */
 	public onWebview<EventName extends RPCEventName<s.RPCEvents_WebviewClient>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_WebviewClient, EventName>,
@@ -158,12 +201,23 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this.listen(this._emitterWeb, 'onWebview', eventName, cb)
 	}
 
+	/** Removes the `onWebview` listener for `eventName` */
 	public offWebview<EventName extends RPCEventName<s.RPCEvents_WebviewClient>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterWeb, 'offWebview', eventName)
 	}
 
+	/**
+	 * Calls the `onClient` listener in this player's webview (client -> webview)
+	 * and resolves with its return value.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const choice = await rpc.emitWebview('openMenu', items)
+	 */
 	public async emitWebview<
 		EventName extends RPCEventName<s.RPCEvents_ClientWebview>,
 	>(
@@ -182,6 +236,15 @@ export class RPCInstanceClient extends RPCInstanceBase {
 
 	// ===== SELF =====
 
+	/**
+	 * Listens for `emitSelf` calls in this environment (client -> client).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onSelf('add', (a, b) => a + b)
+	 */
 	public onSelf<EventName extends RPCEventName<s.RPCEvents_Client>>(
 		eventName: EventName,
 		cb: RPCListener<s.RPCEvents_Client, EventName>,
@@ -189,12 +252,23 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
+	/** Removes the `onSelf` listener for `eventName` */
 	public offSelf<EventName extends RPCEventName<s.RPCEvents_Client>>(
 		eventName: EventName,
 	): this {
 		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
+	/**
+	 * Calls this environment's own `onSelf` listener directly and resolves with
+	 * its return value. No timeout; errors thrown by the listener reach the caller
+	 * unchanged.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` if no `onSelf` listener exists
+	 *
+	 * @example
+	 * const total = await rpc.emitSelf('add', 2, 3)
+	 */
 	public async emitSelf<EventName extends RPCEventName<s.RPCEvents_Client>>(
 		eventName: EventName,
 		...args: RPCEventArgs<s.RPCEvents_Client, EventName>
@@ -204,6 +278,15 @@ export class RPCInstanceClient extends RPCInstanceBase {
 
 	// ===== OTHER =====
 
+	/**
+	 * Registers a chat command (FiveM `RegisterCommand`).
+	 *
+	 * @param cb - gets FiveM's `source`, the strings typed after the command and
+	 *   the full command line. Validate `args` yourself
+	 *
+	 * @example
+	 * rpc.onCommand('coords', () => console.log(GetEntityCoords(PlayerPedId(), false)))
+	 */
 	public onCommand<CommandName extends RPCCommandName<s.RPCCommands_Client>>(
 		command: CommandName,
 		cb: (player: number, args: string[], rawCommand: string) => void,
@@ -215,6 +298,15 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this
 	}
 
+	/**
+	 * Listens to a native FiveM client event, e.g. `entityDamaged`.
+	 *
+	 * @throws {@link RPCError} `UNKNOWN_NATIVE` if `eventName` is not in
+	 *   `NATIVE_CLIENT_EVENTS`. Register other events with FiveM's `on` directly
+	 *
+	 * @example
+	 * rpc.onNativeEvent('entityDamaged', (victim, culprit) => console.log(victim))
+	 */
 	public onNativeEvent<EventName extends keyof RPCNativeClientEvents>(
 		eventName: EventName,
 		cb: (...args: Parameters<RPCNativeClientEvents[EventName]>) => void,
@@ -233,6 +325,16 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this
 	}
 
+	/**
+	 * Listens to a native game event, e.g. `CEventShockingCarCrash`.
+	 *
+	 * @throws {@link RPCError} `UNKNOWN_NATIVE` if `eventName` is not in
+	 *   `NATIVE_CLIENT_NETWORK_EVENTS`. Register other events with FiveM's `on`
+	 *   directly
+	 *
+	 * @example
+	 * rpc.onNativeNetworkEvent('CEventShockingCarCrash', (entities, eventEntity) => {})
+	 */
 	public onNativeNetworkEvent<
 		EventName extends keyof RPCNativeClientNetworkEvents,
 	>(
@@ -253,6 +355,15 @@ export class RPCInstanceClient extends RPCInstanceBase {
 		return this
 	}
 
+	/**
+	 * Focuses this player's webview (FiveM `SetNuiFocus`).
+	 *
+	 * @param hasFocus - the webview receives keyboard input
+	 * @param hasCursor - the mouse cursor is shown
+	 *
+	 * @example
+	 * rpc.setWebviewFocus(true, true)
+	 */
 	public setWebviewFocus(hasFocus: boolean, hasCursor: boolean): this {
 		this.log(`setWebviewFocus ${hasFocus} ${hasCursor}`)
 
