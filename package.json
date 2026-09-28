@@ -1,22 +1,6 @@
 {
-	"workspaces": [
-		"rpc",
-		"shared-types"
-	],
-	"devDependencies": {
-		"@biomejs/biome": "^2.1.1",
-		"@types/bun": "^1.2.18"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	},
-	"scripts": {
-		"check": "bunx biome check",
-		"format": "bunx biome format --write"
-	},
 	"private": true,
-	"type": "module",
-	"license": "CC0-1.0",
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
@@ -33,5 +17,23 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/rilaxik/fivem-rpc.git"
+	},
+	"workspaces": [
+		"rpc",
+		"shared-types"
+	],
+	"type": "module",
+	"scripts": {
+		"build": "bun run --filter '*' build",
+		"check": "oxfmt --check && oxlint",
+		"format": "oxfmt",
+		"format:check": "oxfmt --check",
+		"lint": "oxlint",
+		"typecheck": "bun run --filter '*' typecheck"
+	},
+	"devDependencies": {
+		"oxfmt": "^0.70.0",
+		"oxlint": "^1.85.0",
+		"typescript": "^7.0.2"
 	}
 }

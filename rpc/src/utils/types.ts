@@ -1,9 +1,11 @@
 import type { RPCInstanceClient } from '../core/client'
 import type { RPCInstanceServer } from '../core/server'
 import type { RPCInstanceWebview } from '../core/webview'
+import type { NATIVE_CLIENT_NETWORK_EVENTS } from './native'
 
 /**
- * Possible environment states for `RPCConfig`
+ * Where an instance runs: `server` (server scripts), `client` (client
+ * scripts) or `webview` (NUI page)
  */
 export type RPCEnvironment = 'server' | 'client' | 'webview'
 
@@ -16,18 +18,33 @@ export type RPCEnvironmentResolved<T extends RPCEnvironment> =
 				? RPCInstanceWebview
 				: never
 
-/**
- * `RPCFactory` config.
- *
- * If environment does not match will throw `RPCErrors.UNKNOWN_ENVIRONMENT`
- */
-export type RPCConfig<T extends RPCEnvironment | unknown> = {
+/** `createRPC` config */
+export type RPCConfig<T extends RPCEnvironment = RPCEnvironment> = {
+	/** Environment this instance runs in */
 	env: T
+	/**
+	 * Log every registration, call and incoming payload
+	 *
+	 * @defaultValue false
+	 */
 	debug?: boolean
+	/**
+	 * Milliseconds to wait for a response before the call rejects with
+	 * `RPCErrors.TIMEOUT`. `0` disables the timeout.
+	 *
+	 * @defaultValue 5000
+	 */
+	timeout?: number
 }
 
-/** **Internal** */
-export type RPCEventType = 'event' | 'response'
+/**
+ * **Internal**
+ *
+ * - `event`: call that expects a `response`
+ * - `response`: answer to an `event`
+ * - `broadcast`: one-way event, receivers do not reply
+ */
+export type RPCEventType = 'event' | 'response' | 'broadcast'
 
 /**
  * **Internal**
@@ -39,10 +56,17 @@ export type RPCState = {
 	uuid: string
 	calledFrom: RPCEnvironment
 	calledTo: RPCEnvironment
-	error: string | null
+	error: RPCErrorPayload | null
 	data: unknown[] | null
+	/** Server id of the player involved. The server fills it from `source`, never trusting the sender */
 	player: number | null
 	type: RPCEventType
+}
+
+/** **Internal** Error sent back in a response, rebuilt as `RPCError` by the caller */
+export type RPCErrorPayload = {
+	code: RPCErrors
+	message: string
 }
 
 /**
@@ -76,18 +100,22 @@ export enum RPCEvents {
 	LISTENER_WEB = '__rpc:listenerWeb',
 }
 
-/**
- * Errors to check against
- */
+/** Values of `RPCError.code` */
 export enum RPCErrors {
+	/** The target has no listener for the event (or `emitSelf` has no `onSelf`) */
 	EVENT_NOT_REGISTERED = 'Event not registered',
-	INVALID_DATA = 'Invalid data (possibly broken JSON)',
-	NO_PLAYER = 'No player (failed to resolve from local index)',
-	UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
-	UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
+	/** `onNative*` got an event that is not in its `NATIVE_*` list */
+	UNKNOWN_NATIVE = 'Unknown native event',
+	/** `createRPC` got an `env` other than server, client or webview */
+	UNKNOWN_ENVIRONMENT = 'Unknown environment',
+	/** No response within `RPCConfig.timeout` */
+	TIMEOUT = 'Timed out waiting for response',
+	/** The listener on the target threw; the message carries its error */
+	HANDLER_ERROR = 'Listener threw an error',
 }
 
 /**
+ * Native server events accepted by `onNativeEvent` on the server:
  * https://docs.fivem.net/docs/scripting-reference/events/server-events/
  */
 export type RPCNativeServerEvents = {
@@ -222,6 +250,7 @@ export type RPCNativeServerEvents = {
 }
 
 /**
+ * Native client events accepted by `onNativeEvent` on the client:
  * https://docs.fivem.net/docs/scripting-reference/events/client-events/
  */
 export type RPCNativeClientEvents = {
@@ -232,7 +261,7 @@ export type RPCNativeClientEvents = {
 		baseDamage: number,
 	): void
 	gameEventTriggered(
-		name: RPCNativeClientNetworksEvents | string,
+		name: RPCNativeClientNetworkEventsNames | (string & {}),
 		data: number[],
 	): void
 	mumbleConnected(address: string, reconnecting: boolean): void
@@ -254,7 +283,8 @@ export type RPCNativeClientEvents = {
 	): void
 }
 
-export type RPCNativeClientNetworksEvents = {
+/** Game events accepted by `onNativeNetworkEvent` on the client */
+export type RPCNativeClientNetworkEvents = {
 	[name in RPCNativeClientNetworkEventsNames]: (
 		entities: number[],
 		eventEntity: number,
@@ -263,273 +293,8 @@ export type RPCNativeClientNetworksEvents = {
 }
 
 /**
+ * Names in `NATIVE_CLIENT_NETWORK_EVENTS`:
  * https://docs.fivem.net/docs/game-references/game-events/
  */
 export type RPCNativeClientNetworkEventsNames =
-	| 'CEventAcquaintancePed'
-	| 'CEventAcquaintancePedDead'
-	| 'CEventAcquaintancePedDislike'
-	| 'CEventAcquaintancePedHate'
-	| 'CEventAcquaintancePedLike'
-	| 'CEventAcquaintancePedWanted'
-	| 'CEventAgitated'
-	| 'CEventAgitatedAction'
-	| 'CEventCallForCover'
-	| 'CEventCarUndriveable'
-	| 'CEventClimbLadderOnRoute'
-	| 'CEventClimbNavMeshOnRoute'
-	| 'CEventCombatTaunt'
-	| 'CEventCommunicateEvent'
-	| 'CEventCopCarBeingStolen'
-	| 'CEventCrimeCryForHelp'
-	| 'CEventCrimeReported'
-	| 'CEventDamage'
-	| 'CEventDataDecisionMaker'
-	| 'CEventDataFileMounter'
-	| 'CEventDataResponseAggressiveRubberneck'
-	| 'CEventDataResponseDeferToScenarioPointFlags'
-	| 'CEventDataResponseFriendlyAimedAt'
-	| 'CEventDataResponseFriendlyNearMiss'
-	| 'CEventDataResponsePlayerDeath'
-	| 'CEventDataResponsePoliceTaskWanted'
-	| 'CEventDataResponseSwatTaskWanted'
-	| 'CEventDataResponseTask'
-	| 'CEventDataResponseTaskAgitated'
-	| 'CEventDataResponseTaskCombat'
-	| 'CEventDataResponseTaskCower'
-	| 'CEventDataResponseTaskCrouch'
-	| 'CEventDataResponseTaskDuckAndCover'
-	| 'CEventDataResponseTaskEscapeBlast'
-	| 'CEventDataResponseTaskEvasiveStep'
-	| 'CEventDataResponseTaskExhaustedFlee'
-	| 'CEventDataResponseTaskExplosion'
-	| 'CEventDataResponseTaskFlee'
-	| 'CEventDataResponseTaskFlyAway'
-	| 'CEventDataResponseTaskGrowlAndFlee'
-	| 'CEventDataResponseTaskGunAimedAt'
-	| 'CEventDataResponseTaskHandsUp'
-	| 'CEventDataResponseTaskHeadTrack'
-	| 'CEventDataResponseTaskLeaveCarAndFlee'
-	| 'CEventDataResponseTaskScenarioFlee'
-	| 'CEventDataResponseTaskSharkAttack'
-	| 'CEventDataResponseTaskShockingEventBackAway'
-	| 'CEventDataResponseTaskShockingEventGoto'
-	| 'CEventDataResponseTaskShockingEventHurryAway'
-	| 'CEventDataResponseTaskShockingEventReact'
-	| 'CEventDataResponseTaskShockingEventReactToAircraft'
-	| 'CEventDataResponseTaskShockingEventStopAndStare'
-	| 'CEventDataResponseTaskShockingEventThreatResponse'
-	| 'CEventDataResponseTaskShockingEventWatch'
-	| 'CEventDataResponseTaskShockingNiceCar'
-	| 'CEventDataResponseTaskShockingPoliceInvestigate'
-	| 'CEventDataResponseTaskThreat'
-	| 'CEventDataResponseTaskTurnToFace'
-	| 'CEventDataResponseTaskWalkAway'
-	| 'CEventDataResponseTaskWalkRoundEntity'
-	| 'CEventDataResponseTaskWalkRoundFire'
-	| 'CEventDeadPedFound'
-	| 'CEventDeath'
-	| 'CEventDecisionMakerResponse'
-	| 'CEventDisturbance'
-	| 'CEventDraggedOutCar'
-	| 'CEventEditableResponse'
-	| 'CEventEncroachingPed'
-	| 'CEventEntityDamaged'
-	| 'CEventEntityDestroyed'
-	| 'CEventExplosion'
-	| 'CEventExplosionHeard'
-	| 'CEventFireNearby'
-	| 'CEventFootStepHeard'
-	| 'CEventFriendlyAimedAt'
-	| 'CEventFriendlyFireNearMiss'
-	| 'CEventGetOutOfWater'
-	| 'CEventGivePedTask'
-	| 'CEventGroupScriptAI'
-	| 'CEventGroupScriptNetwork'
-	| 'CEventGunAimedAt'
-	| 'CEventGunShot'
-	| 'CEventGunShotBulletImpact'
-	| 'CEventGunShotWhizzedBy'
-	| 'CEventHelpAmbientFriend'
-	| 'CEventHurtTransition'
-	| 'CEventInAir'
-	| 'CEventInfo'
-	| 'CEventInfoBase'
-	| 'CEventInjuredCryForHelp'
-	| 'CEventLeaderEnteredCarAsDriver'
-	| 'CEventLeaderExitedCarAsDriver'
-	| 'CEventLeaderHolsteredWeapon'
-	| 'CEventLeaderLeftCover'
-	| 'CEventLeaderUnholsteredWeapon'
-	| 'CEventMeleeAction'
-	| 'CEventMustLeaveBoat'
-	| 'CEventNetworkAdminInvited'
-	| 'CEventNetworkAttemptHostMigration'
-	| 'CEventNetworkBail'
-	| 'CEventNetworkCashTransactionLog'
-	| 'CEventNetworkCheatTriggered'
-	| 'CEventNetworkClanInviteReceived'
-	| 'CEventNetworkClanJoined'
-	| 'CEventNetworkClanKicked'
-	| 'CEventNetworkClanLeft'
-	| 'CEventNetworkClanRankChanged'
-	| 'CEventNetworkCloudEvent'
-	| 'CEventNetworkCloudFileResponse'
-	| 'CEventNetworkEmailReceivedEvent'
-	| 'CEventNetworkEndMatch'
-	| 'CEventNetworkEndSession'
-	| 'CEventNetworkEntityDamage'
-	| 'CEventNetworkFindSession'
-	| 'CEventNetworkFollowInviteReceived'
-	| 'CEventNetworkHostMigration'
-	| 'CEventNetworkHostSession'
-	| 'CEventNetworkIncrementStat'
-	| 'CEventNetworkInviteAccepted'
-	| 'CEventNetworkInviteConfirmed'
-	| 'CEventNetworkInviteRejected'
-	| 'CEventNetworkJoinSession'
-	| 'CEventNetworkJoinSessionResponse'
-	| 'CEventNetworkOnlinePermissionsUpdated'
-	| 'CEventNetworkPedLeftBehind'
-	| 'CEventNetworkPickupRespawned'
-	| 'CEventNetworkPlayerArrest'
-	| 'CEventNetworkPlayerCollectedAmbientPickup'
-	| 'CEventNetworkPlayerCollectedPickup'
-	| 'CEventNetworkPlayerCollectedPortablePickup'
-	| 'CEventNetworkPlayerDroppedPortablePickup'
-	| 'CEventNetworkPlayerEnteredVehicle'
-	| 'CEventNetworkPlayerJoinScript'
-	| 'CEventNetworkPlayerLeftScript'
-	| 'CEventNetworkPlayerScript'
-	| 'CEventNetworkPlayerSession'
-	| 'CEventNetworkPlayerSpawn'
-	| 'CEventNetworkPresenceInvite'
-	| 'CEventNetworkPresenceInviteRemoved'
-	| 'CEventNetworkPresenceInviteReply'
-	| 'CEventNetworkPresenceTriggerEvent'
-	| 'CEventNetworkPresence_StatUpdate'
-	| 'CEventNetworkPrimaryClanChanged'
-	| 'CEventNetworkRequestDelay'
-	| 'CEventNetworkRosChanged'
-	| 'CEventNetworkScAdminPlayerUpdated'
-	| 'CEventNetworkScAdminReceivedCash'
-	| 'CEventNetworkScriptEvent'
-	| 'CEventNetworkSessionEvent'
-	| 'CEventNetworkShopTransaction'
-	| 'CEventNetworkSignInStateChanged'
-	| 'CEventNetworkSocialClubAccountLinked'
-	| 'CEventNetworkSpectateLocal'
-	| 'CEventNetworkStartMatch'
-	| 'CEventNetworkStartSession'
-	| 'CEventNetworkStorePlayerLeft'
-	| 'CEventNetworkSummon'
-	| 'CEventNetworkSystemServiceEvent'
-	| 'CEventNetworkTextMessageReceived'
-	| 'CEventNetworkTimedExplosion'
-	| 'CEventNetworkTransitionEvent'
-	| 'CEventNetworkTransitionGamerInstruction'
-	| 'CEventNetworkTransitionMemberJoined'
-	| 'CEventNetworkTransitionMemberLeft'
-	| 'CEventNetworkTransitionParameterChanged'
-	| 'CEventNetworkTransitionStarted'
-	| 'CEventNetworkTransitionStringChanged'
-	| 'CEventNetworkVehicleUndrivable'
-	| 'CEventNetworkVoiceConnectionRequested'
-	| 'CEventNetworkVoiceConnectionResponse'
-	| 'CEventNetworkVoiceConnectionTerminated'
-	| 'CEventNetworkVoiceSessionEnded'
-	| 'CEventNetworkVoiceSessionStarted'
-	| 'CEventNetworkWithData'
-	| 'CEventNetwork_InboxMsgReceived'
-	| 'CEventNewTask'
-	| 'CEventObjectCollision'
-	| 'CEventOnFire'
-	| 'CEventOpenDoor'
-	| 'CEventPedCollisionWithPed'
-	| 'CEventPedCollisionWithPlayer'
-	| 'CEventPedEnteredMyVehicle'
-	| 'CEventPedJackingMyVehicle'
-	| 'CEventPedOnCarRoof'
-	| 'CEventPedSeenDeadPed'
-	| 'CEventPlayerCollisionWithPed'
-	| 'CEventPlayerDeath'
-	| 'CEventPlayerUnableToEnterVehicle'
-	| 'CEventPotentialBeWalkedInto'
-	| 'CEventPotentialBlast'
-	| 'CEventPotentialGetRunOver'
-	| 'CEventPotentialWalkIntoVehicle'
-	| 'CEventProvidingCover'
-	| 'CEventRanOverPed'
-	| 'CEventReactionEnemyPed'
-	| 'CEventReactionInvestigateDeadPed'
-	| 'CEventReactionInvestigateThreat'
-	| 'CEventRequestHelp'
-	| 'CEventRequestHelpWithConfrontation'
-	| 'CEventRespondedToThreat'
-	| 'CEventScanner'
-	| 'CEventScenarioForceAction'
-	| 'CEventScriptCommand'
-	| 'CEventScriptWithData'
-	| 'CEventShocking'
-	| 'CEventShockingBicycleCrash'
-	| 'CEventShockingBicycleOnPavement'
-	| 'CEventShockingCarAlarm'
-	| 'CEventShockingCarChase'
-	| 'CEventShockingCarCrash'
-	| 'CEventShockingCarOnCar'
-	| 'CEventShockingCarPileUp'
-	| 'CEventShockingDangerousAnimal'
-	| 'CEventShockingDeadBody'
-	| 'CEventShockingDrivingOnPavement'
-	| 'CEventShockingEngineRevved'
-	| 'CEventShockingExplosion'
-	| 'CEventShockingFire'
-	| 'CEventShockingGunFight'
-	| 'CEventShockingGunshotFired'
-	| 'CEventShockingHelicopterOverhead'
-	| 'CEventShockingHornSounded'
-	| 'CEventShockingInDangerousVehicle'
-	| 'CEventShockingInjuredPed'
-	| 'CEventShockingMadDriver'
-	| 'CEventShockingMadDriverBicycle'
-	| 'CEventShockingMadDriverExtreme'
-	| 'CEventShockingMugging'
-	| 'CEventShockingNonViolentWeaponAimedAt'
-	| 'CEventShockingParachuterOverhead'
-	| 'CEventShockingPedKnockedIntoByPlayer'
-	| 'CEventShockingPedRunOver'
-	| 'CEventShockingPedShot'
-	| 'CEventShockingPlaneFlyby'
-	| 'CEventShockingPotentialBlast'
-	| 'CEventShockingPropertyDamage'
-	| 'CEventShockingRunningPed'
-	| 'CEventShockingRunningStampede'
-	| 'CEventShockingSeenCarStolen'
-	| 'CEventShockingSeenConfrontation'
-	| 'CEventShockingSeenGangFight'
-	| 'CEventShockingSeenInsult'
-	| 'CEventShockingSeenMeleeAction'
-	| 'CEventShockingSeenNiceCar'
-	| 'CEventShockingSeenPedKilled'
-	| 'CEventShockingSiren'
-	| 'CEventShockingStudioBomb'
-	| 'CEventShockingVehicleTowed'
-	| 'CEventShockingVisibleWeapon'
-	| 'CEventShockingWeaponThreat'
-	| 'CEventShockingWeirdPed'
-	| 'CEventShockingWeirdPedApproaching'
-	| 'CEventShoutBlockingLos'
-	| 'CEventShoutTargetPosition'
-	| 'CEventShovePed'
-	| 'CEventSoundBase'
-	| 'CEventStatChangedValue'
-	| 'CEventStaticCountReachedMax'
-	| 'CEventStuckInAir'
-	| 'CEventSuspiciousActivity'
-	| 'CEventSwitch2NM'
-	| 'CEventUnidentifiedPed'
-	| 'CEventVehicleCollision'
-	| 'CEventVehicleDamage'
-	| 'CEventVehicleDamageWeapon'
-	| 'CEventVehicleOnFire'
-	| 'CEventWrithe'
+	(typeof NATIVE_CLIENT_NETWORK_EVENTS)[number]

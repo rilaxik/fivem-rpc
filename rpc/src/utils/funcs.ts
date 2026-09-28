@@ -1,17 +1,48 @@
 import type {
+	RPCEnvironment,
 	RPCState,
 	RPCStateRaw,
 	RPCStateWeb,
 	RPCStateWebRaw,
 } from './types'
 
+const ENVIRONMENTS: readonly unknown[] = [
+	'server',
+	'client',
+	'webview',
+] satisfies RPCEnvironment[]
+
 /**
  * **Internal**
  *
- * Typed data parser
+ * Checks the shape of an incoming payload. Payloads come from the network or
+ * another runtime, so nothing about them is trusted.
  */
-export function parse(data: RPCStateRaw): RPCState {
-	return JSON.parse(data)
+export function isRPCState(value: unknown): value is RPCState {
+	if (typeof value !== 'object' || value === null) return false
+	const v = value as Record<string, unknown>
+	return (
+		typeof v.event === 'string' &&
+		typeof v.uuid === 'string' &&
+		(v.type === 'event' || v.type === 'response' || v.type === 'broadcast') &&
+		ENVIRONMENTS.includes(v.calledFrom) &&
+		ENVIRONMENTS.includes(v.calledTo) &&
+		(v.data === null || Array.isArray(v.data))
+	)
+}
+
+/**
+ * **Internal**
+ *
+ * Parses a raw payload, `null` if it is not JSON or not an RPC payload
+ */
+export function parse(data: RPCStateRaw): RPCState | null {
+	try {
+		const value: unknown = JSON.parse(data)
+		return isRPCState(value) ? value : null
+	} catch {
+		return null
+	}
 }
 
 /**
@@ -23,21 +54,24 @@ export function stringify(data: RPCState): RPCStateRaw {
 	return JSON.stringify(data) as RPCStateRaw
 }
 
-// automatically parsed by FiveM
-// export function parseWeb(data: RPCStateWebRaw): RPCStateWeb {
-//     return JSON.parse(data)
-// }
-
 /**
  * **Internal**
  *
- * Typed data serializer
+ * Typed data serializer. No parse counterpart: the webview receives NUI
+ * messages already parsed by FiveM.
  */
 export function stringifyWeb(data: RPCStateWeb): RPCStateWebRaw {
 	return JSON.stringify(data) as RPCStateWebRaw
 }
 
-/** **Internal** */
+/**
+ * **Internal**
+ *
+ * UUID v4 shaped call id. Not `crypto.randomUUID`: the FiveM client runtime
+ * has no `crypto` global, and one generator serves all environments. Only
+ * pairs a response with its call, so it need not be unguessable: the server
+ * binds each call to its target player (`Pending` peer check).
+ */
 export function generateUUID(): string {
 	let uuid = ''
 	let random = 0

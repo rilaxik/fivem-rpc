@@ -1,168 +1,61 @@
 # FiveM RPC Shared Types
-### [Docs & Info](https://github.com/rilaxik/fivem-rpc/blob/master/readme.md)
+
+Event and command declarations for [`@entityseven/fivem-rpc`](../rpc/readme.md). With nothing declared, every rpc method accepts any event name, any arguments and any result. Declare your events once and every `on*` and `emit*` call gets checked names, arguments and results
 
 ## Installation
-```bash
-  pnpm i @entityseven/fivem-rpc-shared-types -D
-```
-```bash
-  yarn add @entityseven/fivem-rpc-shared-types --dev
-```
-```bash
-  bun add @entityseven/fivem-rpc-shared-types -d
-```
+
+See the [main readme](../readme.md#installation). The declaration file below imports this package, so it must resolve from that file (in a workspace: install it in the root)
 
 ## Usage
-This package is an enhanced type support for `@entityseven/fivem-rpc`. It provides ability to strictly type your events for better dx.
 
-## Example
-This example is neat way to follow up but you can change it as you wish. It will use bun workspaces, pnpm workspaces work in a similar manner. Referring the following folder structure:
-```markdown
-apps/
-    - server/
-        - package.json
-        - tsconfig.json
-    - client/
-        - package.json
-        - tsconfig.json
-    - webview/
-        - package.json
-        - tsconfig.json
-    - shared/ (this must be available in server, client and webview)
-        - package.json
+1. Create one declaration file shared by server, client and webview code, e.g. `shared/rpc.d.ts`:
 
-    - package.json (root package)
-    - pnpm-workspace.yaml (only if using pnpm)
-```
+   ```ts
+   import '@entityseven/fivem-rpc-shared-types'
 
-- Environment folder: folder with server, client or webview code in it
+   declare module '@entityseven/fivem-rpc-shared-types' {
+       interface RPCEvents_ClientServer {
+           // event name(arguments): value returned by the listener
+           buyItem(item: string, amount: number): boolean
+       }
+       interface RPCCommands_Server {
+           ban: true
+       }
+   }
+   ```
 
-1. Install this package as dev dependency in your root package or in each environment folder separately
-    ```markdown
-    apps/
-        - server/ <- (if not installed root)
-        - client/ <- (if not installed root)
-        - webview/ <- (if not installed root)
-        - shared/
-    
-        - package.json <- here
-    ```
+   The `import` line makes the file a module, so `declare module` adds to the package's interfaces instead of replacing them
 
-2. In `shared/` create folder `fivem-rpc` (or similar), inside it create `index.d.ts`
-    ```markdown
-    apps/
-        - server/ 
-        - client/ 
-        - webview/ 
-        - shared/
-            - fivem-rpc/
-                - index.d.ts <- here
-    
-        - package.json
-    ```
+2. Add the file to `include` in the `tsconfig.json` of every environment:
 
-3. In `index.d.ts` add following:
-    ```ts
-    declare module '@entityseven/fivem-rpc-shared-types' {
-        // Client commands names 
-        export type RPCCommands_Client = ''
- 
-        // Server commands names
-        export type RPCCommands_Server = ''
- 
-        // Client -> Client events
-        export interface RPCEvents_Client {}
- 
-        // Client -> Server events
-        export interface RPCEvents_ClientServer {}
- 
-        // Client -> Webview events
-        export interface RPCEvents_ClientWebview {}
- 
-        // Server -> Server events
-        export interface RPCEvents_Server {}
- 
-        // Server -> Client events
-        export interface RPCEvents_ServerClient {}
- 
-        // Server -> Server events
-        export interface RPCEvents_ServerWebview {}
- 
-        // Webview -> Webview events
-        export interface RPCEvents_Webview {}
- 
-        // Webview -> Client events
-        export interface RPCEvents_WebviewClient {}
- 
-        // Webview -> Server events
-        export interface RPCEvents_WebviewServer {}
-    }
-    ```
+   ```json
+   {
+       "include": ["src", "../shared/rpc.d.ts"]
+   }
+   ```
 
-4. We just created a declaration which will overwrite types from the package. Now we need our packages to refer to these types when linting `rpc` functions. To do this in each environment folder of your project in `tsconfig.json` do these:
-    ```json5
-    {
-        "compilerOptions": {
-            "types": [
-                "../shared/fivem-rpc/" // or your specific folder
-            ]
-        } 
-    }
-    ```
-5. We also need to populate interfaces we created in step 3.
-- `RPCCommands_Client` and `RPCCommands_Server` will include your commands names an union strings:
-    ```ts
-    export type RPCCommands_Client = 'afk' | 'vanish' | '...' // example names
-    export type RPCCommands_Server = 'report' | 'ban' | '...' // example names
-    ```
-- Other interfaces will include your events types. The example will show one but all of the work same way
-    ```ts
-    export interface RPCEvents_ClientServer {
-        clientToServerEventName(data: string, moreData: boolean): number
-        "client-to-server-event-name"(data: string, moreData: boolean): number // can also include characters you cannot use as variable or function names
-    }
-    ```
-    - `clientToServerEventName` or `client-to-server-event-name` is an event name
-    - `data` and `moreData` are the arguments you need to pass when calling an event and argument you will receive when listening (may also include extra, as player, check type hints)
-    - `number` is a return type that will be forwarded back to caller 
-  
-    Doing this will create type hints for you:
-    ```ts
-    // assuming this is in client
-    const response /* number */ = await rpc.emitServer(
-    'clientToServerEventName', /* suggested name */
-    'data', /* will pass typecheck */
-    'moreData', /* will NOT pass typecheck, since required type is `boolean` */
-    )
-    ```
+3. Calls are checked from now on:
 
-## Example (alternative)
-If previous example does not work or you do not like you can also try it this way. Steps that are not mentioned are the same as previous
+   ```ts
+   // server
+   rpc.onClient('buyItem', (player, item, amount) => {
+       // item: string, amount: number, must return boolean
+       return true
+   })
 
-2. In `shared/` create folders `declarations/fivem-rpc`, inside it create `index.d.ts`
-    ```markdown
-    apps/
-        - server/ 
-        - client/ 
-        - webview/ 
-        - shared/
-            - declarations/
-               - fivem-rpc/
-                   - index.d.ts <- here
-    
-        - package.json
-    ```
+   // client
+   const bought = await rpc.emitServer('buyItem', 'water', 2) // boolean
+   await rpc.emitServer('buyItem', 'water') // error: missing `amount`
+   await rpc.emitServer('buyItme', 'water', 2) // error: unknown event
+   ```
 
-4. We just created a declaration which will overwrite types from the package. Now we need our packages to refer to these types when linting `rpc` functions. To do this in each environment folder of your project in `tsconfig.json` do these:
-    ```json5
-    {
-        "compilerOptions": {
-            "typeRoots": [
-                "../shared/declarations/", // or your specific folder
-                "../../node_modules/@types", // you may also want to add this if some of your other libraries are not showing types now
-            ]
-        } 
-    }
-    ```
+## Interfaces
 
-If a any point this stops working for you, do your research on how to redeclare library types and refer to it
+Each interface types one direction, see the [direction table](../rpc/readme.md#directions) for which `emit*` and `on*` methods use it. `RPCCommands_Server` and `RPCCommands_Client` type `onCommand`. An interface you leave empty stays loose (any name, arguments and result), so you can declare them one at a time
+
+- events: the member name is the event name, its parameters are the arguments, its return type is what `emit*` resolves with. Server `onClient` and `onWebview` listeners get the player id before the declared arguments. Names that are not identifiers work too: `'buy-item'(item: string): boolean`
+- commands: the key is the command name, the value is not used (`true`)
+
+## License
+
+Licensed under the [Custom Attribution-NoDerivs Software License](license.md)

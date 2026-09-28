@@ -1,43 +1,69 @@
 {
 	"name": "@entityseven/fivem-rpc",
-	"description": "FiveM RPC is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS",
-	"version": "0.1.0",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"files": [
-		"dist/**/*",
-		"readme.md",
-		"license.md"
-	],
+	"version": "1.0.0",
+	"description": "Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong",
 	"keywords": [
-		"fivem-rpc",
-		"fivem-rpc-shared-types",
+		"cfx",
 		"fivem",
-		"gta"
+		"fivem-rpc",
+		"gta",
+		"nui",
+		"rpc",
+		"typescript"
 	],
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
 			"name": "Danya H",
 			"email": "dev.rilaxik@gmail.com",
 			"url": "https://github.com/rilaxik/"
+		},
+		{
+			"name": "Oleksandr Honcharov",
+			"email": "0976053529@ukr.net",
+			"url": "https://github.com/SashaGoncharov19/"
 		}
 	],
-	"license": "Custom-Attribution-NoDerivs",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/rilaxik/fivem-rpc.git"
+		"url": "https://github.com/rilaxik/fivem-rpc.git",
+		"directory": "rpc"
+	},
+	"files": [
+		"dist/**/*",
+		"skills/**/*",
+		"readme.md",
+		"license.md"
+	],
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.cts",
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs"
+		},
+		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "tsup"
+		"build": "tsdown",
+		"prepublishOnly": "bun run build",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@entityseven/fivem-rpc-shared-types": "workspace:^"
 	},
 	"devDependencies": {
-		"@microsoft/api-extractor": "^7.47.9",
-		"@citizenfx/client": "^2.0.15015-1",
-		"@citizenfx/server": "^2.0.14862-1",
-		"tsup": "^8.3.0"
+		"tsdown": "^0.23.0"
 	},
 	"peerDependencies": {
-		"typescript": "^5"
+		"typescript": ">=5"
+	},
+	"peerDependenciesMeta": {
+		"typescript": {
+			"optional": true
+		}
 	}
 }

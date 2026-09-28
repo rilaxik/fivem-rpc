@@ -1,34 +1,51 @@
 {
 	"name": "@entityseven/fivem-rpc-shared-types",
-	"description": "Shared (enhanced) types for @entityseven/fivem-rpc. Highly recommended to install together",
-	"version": "0.1.0",
-	"types": "types/types/index.d.ts",
-	"files": [
-		"types/**/*",
-		"readme.md",
-		"license.md"
-	],
+	"version": "1.0.0",
+	"description": "Event and command declarations for @entityseven/fivem-rpc, for typed events",
 	"keywords": [
-		"fivem-rpc-shared-types",
-		"fivem-rpc",
+		"cfx",
 		"fivem",
-		"gta"
+		"fivem-rpc",
+		"types",
+		"typescript"
 	],
-	"type": "module",
+	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
 	"contributors": [
 		{
 			"name": "Danya H",
 			"email": "dev.rilaxik@gmail.com",
 			"url": "https://github.com/rilaxik/"
+		},
+		{
+			"name": "Oleksandr Honcharov",
+			"email": "0976053529@ukr.net",
+			"url": "https://github.com/SashaGoncharov19/"
 		}
 	],
-	"license": "Custom-Attribution-NoDerivs",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/rilaxik/fivem-rpc.git"
+		"url": "https://github.com/rilaxik/fivem-rpc.git",
+		"directory": "shared-types"
+	},
+	"files": [
+		"index.d.ts",
+		"readme.md",
+		"license.md"
+	],
+	"types": "./index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts"
+		},
+		"./package.json": "./package.json"
 	},
 	"peerDependencies": {
-		"typescript": "^5"
+		"typescript": ">=5"
+	},
+	"peerDependenciesMeta": {
+		"typescript": {
+			"optional": true
+		}
 	}
 }

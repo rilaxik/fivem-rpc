@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "jsdoc"],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "warn"
+	},
+	"rules": {
+		"typescript/no-explicit-any": "error",
+		"typescript/no-unsafe-function-type": "error",
+		"eslint/no-underscore-dangle": "off",
+		"jsdoc/check-tag-names": [
+			"error",
+			{ "typed": true, "definedTags": ["defaultValue", "remarks", "typeParam"] }
+		],
+		"jsdoc/empty-tags": "error",
+		"jsdoc/no-blank-blocks": "error",
+		"jsdoc/require-param-description": "error",
+		"jsdoc/require-param-name": "error"
+	},
+	"ignorePatterns": ["**/dist"]
+}

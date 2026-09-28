@@ -1,383 +1,301 @@
 import type * as s from '@entityseven/fivem-rpc-shared-types'
+
 import { Emitter } from '../utils/emitter'
-import { generateUUID, parse, stringify } from '../utils/funcs'
+import { RPCError, unknownNativeMessage } from '../utils/errors'
+import { stringify } from '../utils/funcs'
 import { NATIVE_SERVER_EVENTS } from '../utils/native'
 import {
 	type RPCConfig,
 	RPCErrors,
 	RPCEvents,
 	type RPCNativeServerEvents,
-	type RPCState,
 	type RPCStateRaw,
 } from '../utils/types'
-import { Wrapper } from './wrapper'
+import type {
+	RPCCommandName,
+	RPCEventArgs,
+	RPCEventName,
+	RPCEventResult,
+	RPCListener,
+} from '../utils/typing'
+import { RPCInstanceBase } from './base'
 
-declare function onNet(eventName: string, callback: Function): void
-declare function emitNet(eventName: string, ...args: unknown[]): void
-declare function on(eventName: string, callback: Function): void
-declare function RegisterCommand(
-	commandName: string,
-	handler: Function,
-	restricted: boolean,
-): void
-
-export class RPCInstanceServer extends Wrapper {
+/**
+ * RPC instance for server code, returned by `createRPC({ env: 'server' })`.
+ * Create one per server and import it from your own module.
+ *
+ * - `on*` registers the listener that answers calls from one direction. One
+ *   listener per event: registering the same name again replaces it, `off*`
+ *   removes it
+ * - `emit*` calls the listener on the target and resolves with its return
+ *   value, or rejects with {@link RPCError}
+ * - listeners for client and webview calls get the calling player's server id
+ *   first, taken from FiveM `source`
+ */
+export class RPCInstanceServer extends RPCInstanceBase {
 	private readonly _emitterClient: Emitter
-	private readonly _pendingClient: Emitter
 	private readonly _emitterWeb: Emitter
-	private readonly _pendingWeb: Emitter
 
 	constructor(props: RPCConfig<'server'>) {
 		super(props)
 
 		this._emitterClient = new Emitter()
-		this._pendingClient = new Emitter()
 		this._emitterWeb = new Emitter()
-		this._pendingWeb = new Emitter()
 
-		this.console.log('[RPC] Initialized Server')
+		console.log('[RPC] Initialized Server')
 
-		onNet(RPCEvents.LISTENER_CLIENT, this._handleClient.bind(this))
-		onNet(RPCEvents.LISTENER_WEB, this._handleWeb.bind(this))
+		// `source` must be read synchronously, before any await
+		onNet(RPCEvents.LISTENER_CLIENT, (raw: RPCStateRaw) =>
+			this._handle(raw, source, 'client', this._emitterClient),
+		)
+		onNet(RPCEvents.LISTENER_WEB, (raw: RPCStateRaw) =>
+			this._handle(raw, source, 'webview', this._emitterWeb),
+		)
 	}
 
 	// ===== HANDLERS =====
 
-	private async _handleClient(payloadRaw: RPCStateRaw) {
-		try {
-			parse(payloadRaw)
-		} catch (e) {
-			throw new Error(RPCErrors.INVALID_DATA)
+	/**
+	 * Handles a payload from a client or its webview.
+	 *
+	 * @param player - FiveM `source` of the net event: the only trusted player id,
+	 *   whatever the payload claims
+	 */
+	private async _handle(
+		payloadRaw: RPCStateRaw,
+		player: number,
+		from: 'client' | 'webview',
+		emitter: Emitter,
+	) {
+		const payload = this.accept(payloadRaw)
+		if (!payload || payload.calledFrom !== from) return
+
+		// not sent by a player, e.g. a server-side trigger of the RPC channel
+		if (!(player > 0)) {
+			this.log(`dropped ${payload.event}: no player source`)
+			return
 		}
-		const payload = parse(payloadRaw)
+		payload.player = player
 
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:server:accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
-
-		if (payload.calledFrom === 'client') {
-			if (payload.type === 'event') {
-				this.verifyEvent(this._emitterClient, payload)
-				if (payload.player === null || payload.player === -1) {
-					payload.error = RPCErrors.NO_PLAYER
-					this.triggerError(payload)
-					return
-				}
-
-				const responseData = await this._emitterClient.emit(
-					payload.event,
-					payload.player,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
-
-				const response: RPCState = {
-					event: payload.event,
-					uuid: payload.uuid,
-					calledFrom: 'server',
-					calledTo: 'client',
-					error: null,
-					data: [responseData],
-					player: payload.player,
-					type: 'response',
-				}
-
-				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
-			}
-			if (payload.type === 'response') {
-				await this._pendingClient.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
-			}
-		}
-	}
-
-	private async _handleWeb(payloadRaw: RPCStateRaw) {
-		try {
-			parse(payloadRaw)
-		} catch (e) {
-			throw new Error(RPCErrors.INVALID_DATA)
-		}
-		const payload = parse(payloadRaw)
-
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:server:accepted ${payload.type} ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
-
-		if (payload.calledFrom === 'webview') {
-			if (payload.type === 'event') {
-				this.verifyEvent(this._emitterWeb, payload)
-				if (payload.player === null || payload.player === -1) {
-					payload.error = RPCErrors.NO_PLAYER
-					this.triggerError(payload)
-					return
-				}
-
-				const responseData = await this._emitterWeb.emit(
-					payload.event,
-					payload.player,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
-
-				const response: RPCState = {
-					event: payload.event,
-					uuid: payload.uuid,
-					calledFrom: 'server',
-					calledTo: 'webview',
-					error: null,
-					data: [responseData],
-					player: payload.player,
-					type: 'response',
-				}
-
-				emitNet(RPCEvents.LISTENER_SERVER, response.player, stringify(response))
-			}
-			if (payload.type === 'response') {
-				await this._pendingWeb.emit(
-					payload.uuid,
-					...(payload.data && payload.data.length > 0 ? payload.data : []),
-				)
-			}
+		if (payload.type === 'event') {
+			const response = await this.dispatch(emitter, payload, player)
+			emitNet(RPCEvents.LISTENER_SERVER, player, stringify(response))
+		} else if (payload.type === 'response') {
+			this.settle(payload, player)
 		}
 	}
 
 	// ===== CLIENT =====
 
-	public onClient<
-		EventName extends keyof s.RPCEvents_ClientServer,
-		CallbackArguments extends Parameters<s.RPCEvents_ClientServer[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_ClientServer[EventName]>,
-	>(
+	/**
+	 * Listens for `emitServer` calls from clients (client -> server).
+	 *
+	 * @param cb - gets the calling player's server id first (from FiveM
+	 *   `source`, never from the payload), then the event arguments. Its return
+	 *   value (awaited) is sent back to the caller
+	 *
+	 * @example
+	 * rpc.onClient('getMoney', (player, account) => getMoney(player, account))
+	 */
+	public onClient<EventName extends RPCEventName<s.RPCEvents_ClientServer>>(
 		eventName: EventName,
-		cb: (
-			player: number,
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_ClientServer, EventName, [player: number]>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onClient ${eventName}`)
-		}
-
-		this._emitterClient.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterClient, 'onClient', eventName, cb)
 	}
 
-	public offClient<EventName extends keyof s.RPCEvents_ClientServer>(
+	/** Removes the `onClient` listener for `eventName` */
+	public offClient<EventName extends RPCEventName<s.RPCEvents_ClientServer>>(
 		eventName: EventName,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:offClient ${eventName}`)
-		}
-
-		this._emitterClient.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterClient, 'offClient', eventName)
 	}
 
+	/**
+	 * Calls the `onServer` listener on one client (server -> client) and
+	 * resolves with its return value.
+	 *
+	 * @param player - server id of the target player
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const accepted = await rpc.emitClient(player, 'askTrade', offer)
+	 */
 	public async emitClient<
-		EventName extends keyof s.RPCEvents_ServerClient,
-		Arguments extends Parameters<s.RPCEvents_ServerClient[EventName]>,
-		Response extends ReturnType<s.RPCEvents_ServerClient[EventName]>,
+		EventName extends RPCEventName<s.RPCEvents_ServerClient>,
 	>(
 		player: number,
 		eventName: EventName,
-		...args: Arguments
-	): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'server',
-			calledTo: 'client',
-			error: null,
-			data: args.length ? args : null,
-			player: player,
-			type: 'event',
-		}
+		...args: RPCEventArgs<s.RPCEvents_ServerClient, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_ServerClient, EventName>> {
+		const payload = this.request(eventName, 'client', args, player)
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingClient.once(payload.uuid, res)
-		})
+		return this._pending.wait(payload, player)
 	}
 
+	/**
+	 * Runs the `onServer` listener on every client (server -> all clients).
+	 * One-way: resolves once sent, clients do not answer and their failures stay
+	 * on the client.
+	 *
+	 * @example
+	 * await rpc.emitClientEveryone('weatherChanged', 'RAIN')
+	 */
 	public async emitClientEveryone<
-		EventName extends keyof s.RPCEvents_ServerClient,
-		Arguments extends Parameters<s.RPCEvents_ServerClient[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<void> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'server',
-			calledTo: 'client',
-			error: null,
-			data: args.length ? args : null,
-			player: -1,
-			type: 'event',
-		}
+		EventName extends RPCEventName<s.RPCEvents_ServerClient>,
+	>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_ServerClient, EventName>
+	): Promise<void> {
+		const payload = this.request(eventName, 'client', args, -1, 'broadcast')
 
 		emitNet(RPCEvents.LISTENER_SERVER, -1, stringify(payload))
 	}
 
 	// ===== WEBVIEW =====
 
-	public onWebview<
-		EventName extends keyof s.RPCEvents_WebviewServer,
-		CallbackArguments extends Parameters<s.RPCEvents_WebviewServer[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_WebviewServer[EventName]>,
-	>(
+	/**
+	 * Listens for `emitServer` calls from webviews (webview -> server, relayed
+	 * by the player's client).
+	 *
+	 * @param cb - gets the calling player's server id first (from FiveM
+	 *   `source`, never from the payload), then the event arguments. Its return
+	 *   value (awaited) is sent back to the caller
+	 *
+	 * @example
+	 * rpc.onWebview('buyItem', (player, item) => shop.buy(player, item))
+	 */
+	public onWebview<EventName extends RPCEventName<s.RPCEvents_WebviewServer>>(
 		eventName: EventName,
-		cb: (
-			player: number,
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_WebviewServer, EventName, [player: number]>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onWebview ${eventName}`)
-		}
-
-		this._emitterWeb.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterWeb, 'onWebview', eventName, cb)
 	}
 
-	public offWebview<EventName extends keyof s.RPCEvents_WebviewServer>(
+	/** Removes the `onWebview` listener for `eventName` */
+	public offWebview<EventName extends RPCEventName<s.RPCEvents_WebviewServer>>(
 		eventName: EventName,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:offWebview ${eventName}`)
-		}
-
-		this._emitterWeb.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterWeb, 'offWebview', eventName)
 	}
 
+	/**
+	 * Calls the `onServer` listener in one player's webview (server -> webview,
+	 * relayed by that player's client) and resolves with its return value.
+	 *
+	 * @param player - server id of the target player
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` (no listener),
+	 *   `HANDLER_ERROR` (the listener threw) or `TIMEOUT`
+	 *
+	 * @example
+	 * const confirmed = await rpc.emitWebview(player, 'confirmPurchase', item)
+	 */
 	public async emitWebview<
-		EventName extends keyof s.RPCEvents_ServerWebview,
-		Arguments extends Parameters<s.RPCEvents_ServerWebview[EventName]>,
-		Response extends ReturnType<s.RPCEvents_ServerWebview[EventName]>,
+		EventName extends RPCEventName<s.RPCEvents_ServerWebview>,
 	>(
 		player: number,
 		eventName: EventName,
-		...args: Arguments
-	): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'server',
-			calledTo: 'webview',
-			error: null,
-			data: args.length ? args : null,
-			player: player,
-			type: 'event',
-		}
+		...args: RPCEventArgs<s.RPCEvents_ServerWebview, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_ServerWebview, EventName>> {
+		const payload = this.request(eventName, 'webview', args, player)
 
 		emitNet(RPCEvents.LISTENER_SERVER, player, stringify(payload))
 
-		return new Promise<Awaited<Response>>(res => {
-			this._pendingWeb.once(payload.uuid, res)
-		})
+		return this._pending.wait(payload, player)
 	}
 
 	// ===== SELF =====
 
-	public onSelf<
-		EventName extends keyof s.RPCEvents_Server,
-		CallbackArguments extends Parameters<s.RPCEvents_Server[EventName]>,
-		CallbackReturn extends ReturnType<s.RPCEvents_Server[EventName]>,
-	>(
+	/**
+	 * Listens for `emitSelf` calls in this environment (server -> server).
+	 *
+	 * @param cb - gets the event arguments. Its return value (awaited) is sent
+	 *   back to the caller
+	 *
+	 * @example
+	 * rpc.onSelf('add', (a, b) => a + b)
+	 */
+	public onSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
 		eventName: EventName,
-		cb: (
-			...args: CallbackArguments
-		) => Awaited<CallbackReturn> | Promise<Awaited<CallbackReturn>>,
+		cb: RPCListener<s.RPCEvents_Server, EventName>,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onSelf ${eventName}`)
-		}
-
-		this._emitterLocal.on(eventName, cb)
-
-		return this
+		return this.listen(this._emitterLocal, 'onSelf', eventName, cb)
 	}
 
-	public offSelf<EventName extends keyof s.RPCEvents_Server>(
+	/** Removes the `onSelf` listener for `eventName` */
+	public offSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
 		eventName: EventName,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:offSelf ${eventName}`)
-		}
-
-		this._emitterLocal.off(eventName)
-
-		return this
+		return this.unlisten(this._emitterLocal, 'offSelf', eventName)
 	}
 
-	public async emitSelf<
-		EventName extends keyof s.RPCEvents_Server,
-		Arguments extends Parameters<s.RPCEvents_Server[EventName]>,
-		Response extends ReturnType<s.RPCEvents_Server[EventName]>,
-	>(eventName: EventName, ...args: Arguments): Promise<Awaited<Response>> {
-		const payload: RPCState = {
-			event: eventName,
-			uuid: generateUUID(),
-			calledFrom: 'server',
-			calledTo: 'server',
-			error: null,
-			data: args.length ? args : null,
-			player: null,
-			type: 'event',
-		}
-
-		if (this.debug) {
-			this.console.log(
-				`[RPC]:accepted ${payload.event} from ${payload.calledFrom}`,
-			)
-		}
-
-		this.verifyEvent(this._emitterLocal, payload)
-
-		return await this._emitterLocal.emit<Awaited<Response>>(
-			payload.event,
-			...(payload.data && payload.data.length > 0 ? payload.data : []),
-		)
+	/**
+	 * Calls this environment's own `onSelf` listener directly and resolves with
+	 * its return value. No timeout; errors thrown by the listener reach the caller
+	 * unchanged.
+	 *
+	 * @throws {@link RPCError} `EVENT_NOT_REGISTERED` if no `onSelf` listener exists
+	 *
+	 * @example
+	 * const total = await rpc.emitSelf('add', 2, 3)
+	 */
+	public async emitSelf<EventName extends RPCEventName<s.RPCEvents_Server>>(
+		eventName: EventName,
+		...args: RPCEventArgs<s.RPCEvents_Server, EventName>
+	): Promise<RPCEventResult<s.RPCEvents_Server, EventName>> {
+		return this.emitLocal(eventName, args)
 	}
 
 	// ===== OTHER =====
 
-	public onCommand<
-		CommandName extends s.RPCCommands_Server,
-		CallbackArguments extends unknown[],
-	>(
+	/**
+	 * Registers a chat command (FiveM `RegisterCommand`).
+	 *
+	 * @param cb - gets the player's server id (`0` for the server console), the
+	 *   strings typed after the command and the full command line. Validate
+	 *   `args` yourself
+	 * @param restricted - only players with the ACE permission `command.<name>`
+	 *   can use it
+	 *
+	 * @example
+	 * rpc.onCommand('heal', (player, args) => heal(player, Number(args[0])), true)
+	 */
+	public onCommand<CommandName extends RPCCommandName<s.RPCCommands_Server>>(
 		command: CommandName,
-		cb: (player: number, args: CallbackArguments, commandRaw: string) => void,
+		cb: (player: number, args: string[], rawCommand: string) => void,
 		restricted = false,
 	): this {
-		if (this.debug) {
-			this.console.log(`[RPC]:onCommand ${command}`)
-		}
+		this.log(`onCommand ${command}`)
 
 		RegisterCommand(command, cb, restricted)
 
 		return this
 	}
 
-	public onNativeEvent<
-		EventName extends keyof RPCNativeServerEvents,
-		CallbackArguments extends Parameters<RPCNativeServerEvents[EventName]>,
-	>(eventName: EventName, cb: (...args: CallbackArguments) => void): this {
+	/**
+	 * Listens to a native FiveM server event, e.g. `playerJoining`.
+	 *
+	 * @throws {@link RPCError} `UNKNOWN_NATIVE` if `eventName` is not in
+	 *   `NATIVE_SERVER_EVENTS`. Register other events with FiveM's `on` directly
+	 *
+	 * @example
+	 * rpc.onNativeEvent('playerJoining', (source, oldId) => console.log(source))
+	 */
+	public onNativeEvent<EventName extends keyof RPCNativeServerEvents>(
+		eventName: EventName,
+		cb: (...args: Parameters<RPCNativeServerEvents[EventName]>) => void,
+	): this {
 		if (!NATIVE_SERVER_EVENTS.includes(eventName)) {
-			throw new Error(RPCErrors.UNKNOWN_NATIVE)
+			throw new RPCError(
+				RPCErrors.UNKNOWN_NATIVE,
+				unknownNativeMessage(eventName, 'NATIVE_SERVER_EVENTS'),
+			)
 		}
 
-		if (this.debug) {
-			this.console.log(`[RPC]:onNativeEvent ${eventName}`)
-		}
+		this.log(`onNativeEvent ${eventName}`)
 
 		on(eventName, cb)
 

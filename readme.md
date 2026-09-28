@@ -1,41 +1,87 @@
 # FiveM RPC
-is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS
+
+Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong
+
+## Motivation
+
+The idea was to create an extensible package, with various features to simplify the development process and provide as much comfort as possible. Inspired by usage of [altv-xrpc](https://github.com/xxshady/altv-xrpc)
+
+## Packages
+
+| Package                                               | Docs                                   |
+| ----------------------------------------------------- | -------------------------------------- |
+| [`@entityseven/fivem-rpc`](rpc)                       | [API reference](rpc/readme.md)         |
+| [`@entityseven/fivem-rpc-shared-types`](shared-types) | [Typing setup](shared-types/readme.md) |
 
 ## Installation
+
 ```bash
-  pnpm i @entityseven/fivem-rpc
-```
-```bash
-  yarn add @entityseven/fivem-rpc
-```
-```bash
-  bun add @entityseven/fivem-rpc
-```
-It is highly recommended to also install additional package for enhanced typing
-```bash
-  pnpm i @entityseven/fivem-rpc-shared-types -D
-```
-```bash
-  yarn add @entityseven/fivem-rpc-shared-types --dev
-```
-```bash
-  bun add @entityseven/fivem-rpc-shared-types -d
+npm i @entityseven/fivem-rpc
+pnpm add @entityseven/fivem-rpc
+yarn add @entityseven/fivem-rpc
+bun add @entityseven/fivem-rpc
 ```
 
-## Docs
-Can be found in [/rpc/readme.md](https://github.com/rilaxik/fivem-rpc/blob/master/rpc/readme.md)
+Optional, for typed event names, arguments and results ([typing setup](shared-types/readme.md)):
+
+```bash
+npm i -D @entityseven/fivem-rpc-shared-types
+pnpm add -D @entityseven/fivem-rpc-shared-types
+yarn add -D @entityseven/fivem-rpc-shared-types
+bun add -d @entityseven/fivem-rpc-shared-types
+```
+
+Upgrading from 0.1: [migration guide](migration.md)
+
+## Quick start
+
+Create exactly one instance per environment and import it from your own module, not from the library. The client needs one even if it only relays between server and webview.
+
+```ts
+// server/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'server' })
+
+// client/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'client' })
+
+// webview/rpc.ts
+import { createRPC } from '@entityseven/fivem-rpc'
+export const rpc = createRPC({ env: 'webview' })
+```
+
+Listen on one side, emit from the other and await the listener's return value:
+
+```ts
+// server
+rpc.onClient('ping', (player, message) => `pong: ${message} (from ${player})`)
+
+// client
+const reply = await rpc.emitServer('ping', 'hello')
+```
+
+All methods: [API reference](rpc/readme.md).
 
 ## Features
+
 - Type-Safe Development: Eliminate runtime errors and enhance code reliability with comprehensive type safety
 - All-in-one package: Communicate effortlessly between server, client and webview
 
 ## Contributing
+
 Issues and pull requests are very welcome
 
-## License
-Licensed under Custom Attribution-NoDerivs Software License
+When the API changes, update the TSDoc, the [direction table](rpc/readme.md#directions) and the [agent skill](rpc/skills/fivem-rpc/SKILL.md)
 
-## WIP
+Releases are published with `bun publish`, which replaces the `workspace:^` dependency on shared-types with its version (`npm publish` would not)
+
+## License
+
+Licensed under the [Custom Attribution-NoDerivs Software License](license.md)
+
+## Roadmap
+
 - client observers to catch events between server and webview (subscribe-like behaviour)
 - client observers to prevent events (middleware-like behaviour)
 - player manager (transform player id to desired data straight from a listener)
