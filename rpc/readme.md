@@ -421,6 +421,16 @@ const response = await rpc.emitSelf('webviewEvent', someData)
 // response will come from webview listener with returned data
 ```
 
+## Using with AI agents
+
+The package ships an [Agent Skill](https://agentskills.io) with the directions, rules, typing and error fixes above. Copy it into your agent's skills folder, e.g. for Claude Code:
+
+```bash
+cp -r node_modules/@entityseven/fivem-rpc/skills/fivem-rpc .claude/skills/
+```
+
+Copy it again after upgrading. Every method also carries TSDoc with its direction and matching listener
+
 ## License
 
 Licensed under the [Custom Attribution-NoDerivs Software License](license.md)

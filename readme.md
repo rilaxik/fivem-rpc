@@ -72,6 +72,8 @@ All methods: [API reference](rpc/readme.md).
 
 Issues and pull requests are very welcome
 
+When the API changes, update the TSDoc, the [direction table](rpc/readme.md#directions) and the [agent skill](rpc/skills/fivem-rpc/SKILL.md)
+
 Releases are published with `bun publish`, which replaces the `workspace:^` dependency on shared-types with its version (`npm publish` would not)
 
 ## License

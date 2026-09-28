@@ -32,6 +32,7 @@
 	},
 	"files": [
 		"dist/**/*",
+		"skills/**/*",
 		"readme.md",
 		"license.md"
 	],
