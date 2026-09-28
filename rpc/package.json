@@ -1,6 +1,6 @@
 {
 	"name": "@entityseven/fivem-rpc",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong",
 	"keywords": [
 		"cfx",
