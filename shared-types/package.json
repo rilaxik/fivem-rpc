@@ -1,12 +1,13 @@
 {
 	"name": "@entityseven/fivem-rpc-shared-types",
 	"version": "0.1.0",
-	"description": "Shared (enhanced) types for @entityseven/fivem-rpc. Highly recommended to install together",
+	"description": "Event and command declarations for @entityseven/fivem-rpc, for typed events",
 	"keywords": [
+		"cfx",
 		"fivem",
 		"fivem-rpc",
-		"fivem-rpc-shared-types",
-		"gta"
+		"types",
+		"typescript"
 	],
 	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",

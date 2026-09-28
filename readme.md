@@ -1,6 +1,6 @@
 # FiveM RPC
 
-is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS
+Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong
 
 ## Motivation
 
@@ -30,6 +30,8 @@ pnpm add -D @entityseven/fivem-rpc-shared-types
 yarn add -D @entityseven/fivem-rpc-shared-types
 bun add -d @entityseven/fivem-rpc-shared-types
 ```
+
+Upgrading from 0.1: [migration guide](migration.md)
 
 ## Quick start
 
@@ -70,11 +72,13 @@ All methods: [API reference](rpc/readme.md).
 
 Issues and pull requests are very welcome
 
+Releases are published with `bun publish`, which replaces the `workspace:^` dependency on shared-types with its version (`npm publish` would not)
+
 ## License
 
-Licensed under Custom Attribution-NoDerivs Software License
+Licensed under the [Custom Attribution-NoDerivs Software License](license.md)
 
-## WIP
+## Roadmap
 
 - client observers to catch events between server and webview (subscribe-like behaviour)
 - client observers to prevent events (middleware-like behaviour)

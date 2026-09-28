@@ -1,8 +1,8 @@
 # FiveM RPC
 
-is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS
+Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong
 
-Installation, quick start and package overview: [main readme](../readme.md). Typed events: [shared-types](../shared-types/readme.md).
+Installation, quick start and package overview: [main readme](../readme.md). Typed events: [shared-types](../shared-types/readme.md). Upgrading from 0.1: [migration guide](../migration.md).
 
 ## Exports
 
@@ -404,4 +404,4 @@ const response = await rpc.emitSelf('webviewEvent', someData)
 
 ## License
 
-Licensed under Custom Attribution-NoDerivs Software License
+Licensed under the [Custom Attribution-NoDerivs Software License](license.md)

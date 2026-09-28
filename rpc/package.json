@@ -1,12 +1,15 @@
 {
 	"name": "@entityseven/fivem-rpc",
 	"version": "0.1.0",
-	"description": "FiveM RPC is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS",
+	"description": "Call FiveM server, client and NUI listeners like async functions: typed, with timeouts, no event ping-pong",
 	"keywords": [
+		"cfx",
 		"fivem",
 		"fivem-rpc",
-		"fivem-rpc-shared-types",
-		"gta"
+		"gta",
+		"nui",
+		"rpc",
+		"typescript"
 	],
 	"license": "SEE LICENSE IN license.md",
 	"author": "Entity Seven Group",
