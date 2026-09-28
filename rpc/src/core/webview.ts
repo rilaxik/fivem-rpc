@@ -6,7 +6,6 @@ import {
 	RPCEvents,
 	type RPCConfig,
 	type RPCState,
-	type RPCStateRaw,
 	type RPCStateWeb,
 } from '../utils/types'
 import type {
@@ -157,16 +156,13 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 		return response
 	}
 
-	private async _createHttpClientRequest<R>(
-		data: RPCStateRaw | RPCState,
-	): Promise<R> {
-		const dataRaw = typeof data === 'string' ? data : stringify(data)
+	private async _createHttpClientRequest<R>(data: RPCState): Promise<R> {
 		const options = {
 			method: 'post',
 			headers: {
 				'Content-Type': 'application/json; charset=UTF-8',
 			},
-			body: dataRaw,
+			body: stringify(data),
 		}
 		const resourceName = window?.GetParentResourceName?.() ?? 'nui-frame-app'
 		return fetch(
