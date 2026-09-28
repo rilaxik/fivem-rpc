@@ -1,54 +1,58 @@
 # FiveM RPC
 
-is an all-in package with asynchronous RPC implementation for RageMP servers in JS/TS
+is an all-in-one package with asynchronous RPC implementation for FiveM servers in JS/TS
 
 Installation, quick start and package overview: [main readme](../readme.md). Typed events: [shared-types](../shared-types/readme.md).
 
-# Docs
+## Exports
 
-## Extras
+Besides `createRPC` the package exports:
 
-Along with `RPCFactory` you can also import all the types used internally, types for native client/server events and lists of native client/server events. All of that is documented in JSDoc, so no need to duplicate it here
+- `RPCError`, `RPCErrors`, `RPCErrorDetails` - see [Errors](#errors)
+- `RPCConfig`, `RPCEnvironment` and the instance types `RPCInstanceServer`, `RPCInstanceClient`, `RPCInstanceWebview`
+- native event types `RPCNativeServerEvents`, `RPCNativeClientEvents`, `RPCNativeClientNetworkEvents`, `RPCNativeClientNetworkEventsNames` and the lists `NATIVE_SERVER_EVENTS`, `NATIVE_CLIENT_EVENTS`, `NATIVE_CLIENT_NETWORK_EVENTS` accepted by the `onNative*` methods
 
 ## RPCConfig
 
 ```ts
-type RPCConfig<T extends RPCEnvironment | unknown> = {
-    env: T
-    debug?: boolean
+type RPCConfig = {
+    env: 'server' | 'client' | 'webview'
+    debug?: boolean // default false, logs every registration, call and incoming payload
+    timeout?: number // default 5000, ms to wait for a response, 0 disables it
 }
 ```
 
-Failing to set `env` to provided type will result in `RPCErrors.UNKNOWN_ENVIRONMENT`
-`debug` adds additional console logs to events
+An unknown `env` makes `createRPC` throw `RPCError` with code `RPCErrors.UNKNOWN_ENVIRONMENT`
 
 ## Errors
 
-Known errors could be one of following or an error throw by a callback specifically
+Every error from this library is an `RPCError`. `code` is one of `RPCErrors`, `message` says what to fix, and `details` names the call when the error comes from one
 
 ```ts
 enum RPCErrors {
     EVENT_NOT_REGISTERED = 'Event not registered',
-    INVALID_DATA = 'Invalid data (possibly broken JSON)',
-    NO_PLAYER = 'No player (failed to resolve from local index)',
-    UNKNOWN_NATIVE = 'Unknown native event (if you are sure this exists - use native handler)',
-    UNKNOWN_ENVIRONMENT = 'Unknown environment (must be either "server", "client" or "webview")',
+    UNKNOWN_NATIVE = 'Unknown native event',
+    UNKNOWN_ENVIRONMENT = 'Unknown environment',
+    TIMEOUT = 'Timed out waiting for response',
+    HANDLER_ERROR = 'Listener threw an error',
 }
 ```
 
 ### Example error
 
-Values wrapped in `<>` always exist, just not relevant for an example. Keep in mind that some errors are thrown in their destination(`To`) point: this example will throw on server
+The server has no `onClient('buyItem', ...)` listener, so the call from the client rejects:
 
-```
-Error: No player (failed to resolve from local index)
-Event: 'clientServerEvent'
-Uuid: <uuid>
-From: 'client'
-To: 'server'
-Player: <non-existent-player>
-Type: 'event'
-Data: [<data>]
+```ts
+import { RPCError, RPCErrors } from '@entityseven/fivem-rpc'
+
+try {
+    await rpc.emitServer('buyItem', 'water')
+} catch (e) {
+    if (e instanceof RPCError && e.code === RPCErrors.EVENT_NOT_REGISTERED) {
+        e.message // 'No listener for "buyItem" on server. Register it with rpc.onClient("buyItem", ...) in server code.'
+        e.details // { event: 'buyItem', uuid: '<uuid>', from: 'client', to: 'server' }
+    }
+}
 ```
 
 ## Server ([source](src/core/server.ts))
@@ -83,10 +87,10 @@ const response = await rpc.emitClient(playerServerId, 'serverClientEvent', someD
 
 ### emitClientEveryone
 
-Sends event to all clients
+Sends event to all clients. One-way: clients run their listener but do not answer
 
 ```ts
-rpc.emitClientEveryone('serverClientEvent', someData)
+await rpc.emitClientEveryone('serverClientEvent', someData)
 ```
 
 ### onWebview
@@ -110,7 +114,7 @@ rpc.offWebview('webviewServerEvent')
 
 ### emitWebview
 
-Sends event to specified webview
+Sends event to the webview of specified player
 
 ```ts
 const response = await rpc.emitWebview(playerServerId, 'serverWebviewEvent', someData)
@@ -147,12 +151,12 @@ const response = await rpc.emitSelf('serverEvent', someData)
 
 ### onCommand
 
-Registers chat command. Since arguments are untyped you must validate them yourself
+Registers chat command. `args` are the raw strings typed after the command, validate them yourself. With `restricted` set to `true` only players with the ACE permission `command.<name>` can use it (defaults to `false`)
 
 ```ts
-rpc.onCommand('serverCommand', (player, args, commandRaw) => {
+rpc.onCommand('serverCommand', (player, args, rawCommand) => {
     // logic
-})
+}, true /* restricted */)
 ```
 
 ### onNativeEvent
@@ -192,7 +196,7 @@ Sends event to server
 
 ```ts
 const response = await rpc.emitServer('clientServerEvent', someData)
-// response will come from webview listener with returned data
+// response will come from server listener with returned data
 ```
 
 ### onWebview
@@ -216,7 +220,7 @@ rpc.offWebview('webviewClientEvent')
 
 ### emitWebview
 
-Sends event to specified webview
+Sends event to own webview
 
 ```ts
 const response = await rpc.emitWebview('clientWebviewEvent', someData)
@@ -253,10 +257,10 @@ const response = await rpc.emitSelf('clientEvent', someData)
 
 ### onCommand
 
-Registers chat command. Since arguments are untyped you must validate them yourself
+Registers chat command. `args` are the raw strings typed after the command, validate them yourself
 
 ```ts
-rpc.onCommand('clientCommand', (player, args, commandRaw) => {
+rpc.onCommand('clientCommand', (player, args, rawCommand) => {
     // logic
 })
 ```
@@ -344,7 +348,7 @@ Sends event to server
 
 ```ts
 const response = await rpc.emitServer('webviewServerEvent', someData)
-// response will come from webview listener with returned data
+// response will come from server listener with returned data
 ```
 
 ### onSelf
@@ -375,6 +379,6 @@ const response = await rpc.emitSelf('webviewEvent', someData)
 // response will come from webview listener with returned data
 ```
 
-# License
+## License
 
 Licensed under Custom Attribution-NoDerivs Software License
