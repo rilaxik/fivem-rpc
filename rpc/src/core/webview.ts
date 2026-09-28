@@ -164,6 +164,8 @@ export class RPCInstanceWebview extends RPCInstanceBase {
 			},
 			body: stringify(data),
 		}
+		// FiveM injects GetParentResourceName into NUI pages. Without it (page
+		// opened in a regular browser) the fetch fails and the call rejects.
 		const resourceName = window?.GetParentResourceName?.() ?? 'nui-frame-app'
 		return fetch(
 			`https://${resourceName}/${RPCEvents.LISTENER_WEB}`,

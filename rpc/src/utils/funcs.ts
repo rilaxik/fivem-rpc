@@ -64,7 +64,14 @@ export function stringifyWeb(data: RPCStateWeb): RPCStateWebRaw {
 	return JSON.stringify(data) as RPCStateWebRaw
 }
 
-/** **Internal** */
+/**
+ * **Internal**
+ *
+ * UUID v4 shaped call id. Not `crypto.randomUUID`: the FiveM client runtime
+ * has no `crypto` global, and one generator serves all environments. Only
+ * pairs a response with its call, so it need not be unguessable: the server
+ * binds each call to its target player (`Pending` peer check).
+ */
 export function generateUUID(): string {
 	let uuid = ''
 	let random = 0
