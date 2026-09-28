@@ -11,7 +11,7 @@
     },
     "rpc": {
       "name": "@entityseven/fivem-rpc",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@entityseven/fivem-rpc-shared-types": "workspace:^",
       },
@@ -27,7 +27,7 @@
     },
     "shared-types": {
       "name": "@entityseven/fivem-rpc-shared-types",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "peerDependencies": {
         "typescript": ">=5",
       },
